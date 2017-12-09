@@ -18,7 +18,6 @@ void ofApp::setup(){
     depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
     depthShader.linkProgram();
     
-    
     isRecording = false;
     humanDetected = false;
     gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
@@ -76,6 +75,7 @@ void ofApp::draw(){
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         
+        
         if (isRecording) {
             frameFbo.draw(0, 0, w, h);
         }
@@ -99,10 +99,27 @@ void ofApp::draw(){
     
     ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
     
+    //        //      Set RGBA Image
+    //        ofPixels & colorPix = colorImg.getPixels();
+    //        ofPixels & rgbaPix = rgbaImage.getPixels();
+    //        blurAlpha.setFromPixels(pix);
+    //        blurAlpha.blur(3);
+    //        rgbaPix.setChannel(0, colorPix.getChannel(0));
+    //        rgbaPix.setChannel(1, colorPix.getChannel(1));
+    //        rgbaPix.setChannel(2, colorPix.getChannel(2));
+    //        rgbaPix.setChannel(3, blurAlpha.getPixels());
+    //        rgbaImage.setFromPixels(rgbaPix);
+    //    }
+    
+    //  contourFinder.findContours(grayImage, 20, (w*h)/3, 10, true);
+    
+    
     //  Loop through & display Gnomes
 //    for (int i=0; i<numGnomes; i++) {
 //        gnomes[i].draw();
 //    }
+    
+    // https://forum.openframeworks.cc/t/simple-program-for-randomly-displaying-videos/17876/5
 
 }
 

@@ -1,4 +1,3 @@
 ofxMultiKinectV2
 ofxOpenCv
 ofxTurboJpeg
-ofxVideoRecorder

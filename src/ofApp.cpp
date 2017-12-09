@@ -38,7 +38,14 @@ void ofApp::setup(){
 
     
     // Kinect
+    
     kinect0.open(true, true, 0, 2);
+    // Note :
+    // Default OpenCL device might not be optimal.
+    // e.g. Intel HD Graphics will be chosen instead of GeForce.
+    // To avoid it, specify OpenCL device index manually like following.
+    // kinect1.open(true, true, 0, 2); // GeForce on MacBookPro Retina
+    
     kinect0.start();
     gr.setup(kinect0.getProtonect(), 2);
     
@@ -70,8 +77,11 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofBackground(255);
-    ofSetColor(255, 255, 255);
+//    ofBackground(255);
+//    ofSetColor(255, 255, 255);
+    ofClear(255);
+    
+//    testTex0.draw(0, 0, w, h);
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         

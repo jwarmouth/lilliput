@@ -3,13 +3,11 @@
 #include "ofMain.h"
 #include "ofxMultiKinectV2.h"
 #include "ofxOpenCv.h"
-#include "ofxVideoRecorder.h"
+//#include "ofxVideoRecorder.h"
 //#include "gnome.h"
 #include "GpuRegistration.h"
 
 class ofApp : public ofBaseApp{
-
-
     
 public:
     bool isRecording;
@@ -22,18 +20,20 @@ public:
 //    ofFile saveLocation;
     
     ofxMultiKinectV2 kinect0;
-    ofShader depthShader;
     ofTexture colorTex0;
     ofTexture depthTex0;
+//    ofTexture testTex0;
+    
     GpuRegistration gr;
     ofFbo frameFbo;
+    
+    ofShader depthShader;
     ofShader alphaShader;
     
     bool process_occlusion;
     bool draw_depth;
     bool draw_registered;
     bool draw_video;
-
     
     //  Width & Height of Video
     int w, h, depthH, depthW;
@@ -53,10 +53,6 @@ public:
 //    int numGnomes;
 //    gnome gnomes[5];
     
-    //    Video Recorder
-//    ofPtr<ofQTKitGrabber> vidRecorder;
-//    void videoSaved(ofVideoSavedEventArgs& e);
-//    vector<string> videoDevices;
     
     // Jeffu methods
     void detectHuman();

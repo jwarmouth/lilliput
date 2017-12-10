@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		054EE1861EA7C72400F4B791 /* libturbojpeg.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 054EE1851EA7C72400F4B791 /* libturbojpeg.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		05B3457C1FDD06AA00D464E9 /* ofxImageSequence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05B3457A1FDD06AA00D464E9 /* ofxImageSequence.cpp */; };
 		169D3C72FDE6C5590A1616F5 /* ofxCvFloatImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B6A03390302D5A2C9F0E4AB /* ofxCvFloatImage.cpp */; };
 		1D5F3298C2FA073628012944 /* ofxCvContourFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C76DE5C29BDBD2CAA1DD0021 /* ofxCvContourFinder.cpp */; };
 		250A95BA26587BE85DB0A353 /* ofxCvColorImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CE9C7160245B19131DAE6128 /* ofxCvColorImage.cpp */; };
@@ -65,6 +66,8 @@
 		054EE1851EA7C72400F4B791 /* libturbojpeg.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libturbojpeg.dylib; sourceTree = "<group>"; };
 		057122A817D12571F8C0C7A4 /* ofxCvGrayscaleImage.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxCvGrayscaleImage.cpp; path = ../../../addons/ofxOpenCv/src/ofxCvGrayscaleImage.cpp; sourceTree = SOURCE_ROOT; };
 		057D8E7580EA21E2254ADDDA /* camera.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = camera.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/stitching/detail/camera.hpp; sourceTree = SOURCE_ROOT; };
+		05B3457A1FDD06AA00D464E9 /* ofxImageSequence.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofxImageSequence.cpp; path = ../../../addons/ofxImageSequence/src/ofxImageSequence.cpp; sourceTree = "<group>"; };
+		05B3457B1FDD06AA00D464E9 /* ofxImageSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofxImageSequence.h; path = ../../../addons/ofxImageSequence/src/ofxImageSequence.h; sourceTree = "<group>"; };
 		075597E52E99BDE94F8036B2 /* fast_marching_inl.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = fast_marching_inl.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/videostab/fast_marching_inl.hpp; sourceTree = SOURCE_ROOT; };
 		087522EA37A32B8D902CAB64 /* core_c.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = core_c.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/core/core_c.h; sourceTree = SOURCE_ROOT; };
 		096CB33CAD6C5A446E7026E9 /* dynamic_bitset.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = dynamic_bitset.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/dynamic_bitset.h; sourceTree = SOURCE_ROOT; };
@@ -309,6 +312,23 @@
 				45E004D1064EC5B8C5C40A83 /* ts_perf.hpp */,
 			);
 			name = ts;
+			sourceTree = "<group>";
+		};
+		05B345781FDD060400D464E9 /* ofxImageSequence */ = {
+			isa = PBXGroup;
+			children = (
+				05B345791FDD069500D464E9 /* src */,
+			);
+			name = ofxImageSequence;
+			sourceTree = "<group>";
+		};
+		05B345791FDD069500D464E9 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				05B3457A1FDD06AA00D464E9 /* ofxImageSequence.cpp */,
+				05B3457B1FDD06AA00D464E9 /* ofxImageSequence.h */,
+			);
+			name = src;
 			sourceTree = "<group>";
 		};
 		06E31D3687118797DD86DB35 /* protonect */ = {
@@ -723,6 +743,7 @@
 		BB4B014C10F69532006C3DED /* addons */ = {
 			isa = PBXGroup;
 			children = (
+				05B345781FDD060400D464E9 /* ofxImageSequence */,
 				95DA0149F6FE8A2707A30A41 /* ofxMultiKinectV2 */,
 				A0B90D3B0ADB9C1716816714 /* ofxOpenCv */,
 				334E8B760835B4E270BF0E5C /* ofxTurboJpeg */,
@@ -1024,6 +1045,7 @@
 				A7C0D61E90A5E31756CB3030 /* ofxMultiKinectV2.cpp in Sources */,
 				879FF62052195AD1A4F2D72E /* GpuRegistration.cpp in Sources */,
 				8D0B283FA19BACFC2D3533EE /* ofProtonect2.cpp in Sources */,
+				05B3457C1FDD06AA00D464E9 /* ofxImageSequence.cpp in Sources */,
 				250A95BA26587BE85DB0A353 /* ofxCvColorImage.cpp in Sources */,
 				1D5F3298C2FA073628012944 /* ofxCvContourFinder.cpp in Sources */,
 				169D3C72FDE6C5590A1616F5 /* ofxCvFloatImage.cpp in Sources */,

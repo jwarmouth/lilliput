@@ -15,7 +15,7 @@
 #include "ofxVideoRecorder.h"
 //#include "gnome.h"
 #include "GpuRegistration.h"
-
+#include "ofxImageSequence.h"
 class ofApp : public ofBaseApp{
 
 

@@ -27,8 +27,8 @@ void gnome::setup() {
     vidWidth = 640;
     vidHeight = 480;
     
-    w = 64;
-    h = 64;
+    w = 256;
+    h = 212;
     y = -h;
     x = ofRandom(140, 500);
     speed = 0;
@@ -67,7 +67,7 @@ void gnome::update() {
 void gnome::draw() {
     
     //get the frame based on the current time and draw it
-    sequence.getFrameForTime(ofGetElapsedTimef())->draw(640,480);
+    sequence.getFrameForTime(ofGetElapsedTimef())->draw(640,480, w, h);
     
 //    vid.draw(x*2, y*2, w*2, h*2);
 }

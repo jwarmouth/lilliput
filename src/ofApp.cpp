@@ -58,6 +58,8 @@ void ofApp::setup(){
     //    for (int i=0; i<numGnomes; i++) {
     //        gnomes[i].setup();
     //    }
+    
+    theGnome.setup();
 
 }
 
@@ -75,6 +77,7 @@ void ofApp::update(){
         
         if (isRecording) {
             checkRecording();
+            theGnome.update();
         }
     }
 }
@@ -86,25 +89,28 @@ void ofApp::draw(){
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         
+        colorTex0.draw(0, 0, w, h);
+        
         if (isRecording) {
-            frameFbo.draw(0, 0, w, h);
+//            frameFbo.draw(0, 0, w, h);
+            theGnome.draw();
         }
         
         // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
-        else if (draw_video) {
-            colorTex0.draw(0, 0, w, h);
-        }
+//        else if (draw_video) {
+//            colorTex0.draw(0, 0, w, h);
+//        }
         
-        if (draw_registered) {
-            gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-//            gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
-        }
-        
-        if (draw_depth) {
-            depthShader.begin();
-            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-            depthShader.end();
-        }
+//        if (draw_registered) {
+//            gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+////            gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
+//        }
+//        
+//        if (draw_depth) {
+//            depthShader.begin();
+//            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+//            depthShader.end();
+//        }
     }
     
     ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
@@ -131,7 +137,7 @@ void ofApp::startRecording(){
     isRecording = true;
     frameCount = 0;
     makeNewDirectory();
-    theGnome.setup();
+    theGnome.randomGnome();
     // Might set up a timer - start recording after 15-30 frames
 }
 
@@ -185,8 +191,8 @@ void ofApp::checkRecording(){
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
     
-    int saveW = 1024; //512;
-    int saveH = 848; //424;
+    int saveW = 1024; //256 / 512 / 1024;
+    int saveH = 848; //212 / 424 / 848;
     
     // Draw the depth texture into a Frame Buffer Object
     ofFbo depthFbo;

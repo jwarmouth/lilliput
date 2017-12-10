@@ -131,6 +131,7 @@ void ofApp::startRecording(){
     isRecording = true;
     frameCount = 0;
     makeNewDirectory();
+    theGnome.setup();
     // Might set up a timer - start recording after 15-30 frames
 }
 
@@ -226,7 +227,7 @@ void ofApp::saveFrame(){
     // Prepare pixels object
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
-    fileName = currentPath + "/gnome_" + ofToString(frameCount) + ".png";
+    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
     ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
     
     // IT WORKS!!! Saves .png sequence with alpha channel

@@ -13,7 +13,7 @@
 #include "ofxMultiKinectV2.h"
 #include "ofxOpenCv.h"
 #include "ofxVideoRecorder.h"
-//#include "gnome.h"
+#include "gnome.h"
 #include "GpuRegistration.h"
 #include "ofxImageSequence.h"
 class ofApp : public ofBaseApp{
@@ -61,6 +61,7 @@ public:
     //     The Gnomes
 //    int numGnomes;
 //    gnome gnomes[5];
+    gnome theGnome;
     
     //    Video Recorder
 //    ofPtr<ofQTKitGrabber> vidRecorder;

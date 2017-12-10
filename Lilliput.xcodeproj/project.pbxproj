@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		054EE1861EA7C72400F4B791 /* libturbojpeg.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 054EE1851EA7C72400F4B791 /* libturbojpeg.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		05B3457C1FDD06AA00D464E9 /* ofxImageSequence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05B3457A1FDD06AA00D464E9 /* ofxImageSequence.cpp */; };
+		05EFE4BA1FDD076B0031F864 /* gnome.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05EFE4B81FDD076B0031F864 /* gnome.cpp */; };
 		169D3C72FDE6C5590A1616F5 /* ofxCvFloatImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B6A03390302D5A2C9F0E4AB /* ofxCvFloatImage.cpp */; };
 		1D5F3298C2FA073628012944 /* ofxCvContourFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C76DE5C29BDBD2CAA1DD0021 /* ofxCvContourFinder.cpp */; };
 		250A95BA26587BE85DB0A353 /* ofxCvColorImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CE9C7160245B19131DAE6128 /* ofxCvColorImage.cpp */; };
@@ -68,6 +69,8 @@
 		057D8E7580EA21E2254ADDDA /* camera.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = camera.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/stitching/detail/camera.hpp; sourceTree = SOURCE_ROOT; };
 		05B3457A1FDD06AA00D464E9 /* ofxImageSequence.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofxImageSequence.cpp; path = ../../../addons/ofxImageSequence/src/ofxImageSequence.cpp; sourceTree = "<group>"; };
 		05B3457B1FDD06AA00D464E9 /* ofxImageSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofxImageSequence.h; path = ../../../addons/ofxImageSequence/src/ofxImageSequence.h; sourceTree = "<group>"; };
+		05EFE4B81FDD076B0031F864 /* gnome.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gnome.cpp; sourceTree = "<group>"; };
+		05EFE4B91FDD076B0031F864 /* gnome.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gnome.h; sourceTree = "<group>"; };
 		075597E52E99BDE94F8036B2 /* fast_marching_inl.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = fast_marching_inl.hpp; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/videostab/fast_marching_inl.hpp; sourceTree = SOURCE_ROOT; };
 		087522EA37A32B8D902CAB64 /* core_c.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = core_c.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/core/core_c.h; sourceTree = SOURCE_ROOT; };
 		096CB33CAD6C5A446E7026E9 /* dynamic_bitset.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = dynamic_bitset.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/dynamic_bitset.h; sourceTree = SOURCE_ROOT; };
@@ -876,6 +879,8 @@
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
+				05EFE4B81FDD076B0031F864 /* gnome.cpp */,
+				05EFE4B91FDD076B0031F864 /* gnome.h */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
@@ -1040,6 +1045,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				05EFE4BA1FDD076B0031F864 /* gnome.cpp in Sources */,
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
 				E4B69E210A3A1BDC003C02F2 /* ofApp.cpp in Sources */,
 				A7C0D61E90A5E31756CB3030 /* ofxMultiKinectV2.cpp in Sources */,

@@ -40,21 +40,28 @@ public:
 //    ofFile saveLocation;
     
     ofxMultiKinectV2 kinect0;
-    ofShader depthShader;
+    
     ofTexture colorTex0;
     ofTexture depthTex0;
+    ofTexture irTex0;
+    
     GpuRegistration gr;
-    ofFbo frameFbo;
+    
+    ofShader depthShader;
+    ofShader irShader;
     ofShader alphaShader;
+    ofFbo frameFbo;
     
     bool process_occlusion;
     bool draw_depth;
     bool draw_registered;
+    bool draw_ir;
     bool draw_video;
+    bool calibrate;
 
     
     //  Width & Height of Video
-    int w, h, depthH, depthW;
+    int w, h, depthH, depthW, saveW, saveH;
     float screenRotation;
     
     //  Kinect & OpenCV Variables
@@ -88,6 +95,7 @@ public:
     void calculateAlpha();
     void checkRecording();
     void checkKeys();
+    void calibrateBackground();
     
     
     // openFrameworks methods
@@ -120,7 +128,7 @@ STRINGIFY(
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
               float value = col.r;
-              float low1 = 1500.0; // near distance in cm
+              float low1 = 1000.0; // near distance in cm
               float high1 = 3000.0; // far distance in cm
               float low2 = 1.0;
               float high2 = 0.0;
@@ -138,13 +146,13 @@ STRINGIFY(
           );
 
 
-//static string irFragmentShader =
-//STRINGIFY(
-//          uniform sampler2DRect tex;
-//          void main()
-//          {
-//              vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
-//              float value = col.r / 65535.0;
-//              gl_FragColor = vec4(vec3(value), 1.0);
-//          }
-//          );
+static string irFragmentShader =
+STRINGIFY(
+          uniform sampler2DRect tex;
+          void main()
+          {
+              vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
+              float value = col.r / 65535.0;
+              gl_FragColor = vec4(vec3(value), 1.0);
+          }
+          );

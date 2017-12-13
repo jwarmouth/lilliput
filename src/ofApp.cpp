@@ -28,6 +28,9 @@ void ofApp::setup(){
     depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
     depthShader.linkProgram();
     
+    irShader.setupShaderFromSource(GL_FRAGMENT_SHADER, irFragmentShader);
+    irShader.linkProgram();
+    
     recordingState = PAUSED;
 //    isRecording = false;
     humanDetected = false;
@@ -38,6 +41,9 @@ void ofApp::setup(){
     h = 1080;
     depthW = 1500;
     depthH = 1080;
+    saveW = 1024; //256 / 512 / 1024;
+    saveH = 848; //212 / 424 / 848;
+    
     screenRotation = 90;
     ofSetFrameRate(60);
     ofEnableAlphaBlending();
@@ -46,8 +52,9 @@ void ofApp::setup(){
     process_occlusion = false;
     draw_video = true;
     maxFramesPerGnome = 900;
-    recordingDelay = 1.0f;
+    recordingDelay = 0.5f;
     recordingTimer = 0.0f;
+    calibrate = true;
 
     
     // Kinect
@@ -72,6 +79,11 @@ void ofApp::update(){
     if (kinect0.isFrameNew()){
         colorTex0.loadData(kinect0.getColorPixelsRef());
         depthTex0.loadData(kinect0.getDepthPixelsRef());
+        irTex0.loadData(kinect0.getIrPixelsRef());
+        
+        if (calibrate) {
+            calibrateBackground();
+        }
         
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
@@ -85,8 +97,13 @@ void ofApp::update(){
         
         if (recordingState == RECORDING) {
             checkRecording();
-            theGnome.update();
         }
+        
+        if (calibrate) {
+            calibrateBackground();
+        }
+        
+        theGnome.update();
     }
 }
 
@@ -99,26 +116,36 @@ void ofApp::draw(){
         
         colorTex0.draw(0, 0, w, h);
         
-        if (recordingState == RECORDING) {
-//            frameFbo.draw(0, 0, w, h);
-            theGnome.draw();
+        if (draw_depth) {
+            depthShader.begin();
+            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+            depthShader.end();
         }
         
+        if (draw_ir) {
+            irShader.begin();
+            irTex0.draw(210, 0, depthW, depthH);
+            irShader.end();
+        }
+        
+        if (draw_registered) {
+            gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+//            gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
+        }
+        
+//        if (recordingState == RECORDING) {
+////            frameFbo.draw(0, 0, w, h);
+//        }
+        
+        theGnome.draw();
         // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
 //        else if (draw_video) {
 //            colorTex0.draw(0, 0, w, h);
 //        }
         
-//        if (draw_registered) {
-//            gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-////            gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
-//        }
+
 //        
-//        if (draw_depth) {
-//            depthShader.begin();
-//            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-//            depthShader.end();
-//        }
+
     }
     
     ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
@@ -183,6 +210,14 @@ void ofApp::keyPressed(int key){
         draw_video = !draw_video;
     }
     
+    if (key == 'i') {
+        draw_ir = !draw_ir;
+    }
+    
+    if (key == 'c') {
+        calibrate = true;
+    }
+    
 }
 
 //--------------------------------------------------------------
@@ -205,9 +240,6 @@ void ofApp::checkRecording(){
 
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
-    
-    int saveW = 1024; //256 / 512 / 1024;
-    int saveH = 848; //212 / 424 / 848;
     
     // Draw the depth texture into a Frame Buffer Object
     ofFbo depthFbo;
@@ -259,7 +291,6 @@ void ofApp::saveFrame(){
 }
 
 //--------------------------------------------------------------
-
 void ofApp::makeNewDirectory(){
     currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
     ofDirectory dir(currentPath);
@@ -279,7 +310,13 @@ void ofApp::makeNewDirectory(){
 }
 
 //--------------------------------------------------------------
+void ofApp::calibrateBackground(){
+    calibrate = false;
+}
+
+//--------------------------------------------------------------
 void ofApp::calculateAlpha(){
     
 }
+
 

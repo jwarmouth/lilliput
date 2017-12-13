@@ -19,7 +19,13 @@ void gnome::setup() {
     
     gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
 //    sequence.loadSequence("frame", "png", 1, 11, 2);
-    randomGnome();
+    
+    gnomeDir = chooseRandomGnome();
+    ofDirectory g(gnomeDir);
+    g.listDir();
+    sequence.enableThreadedLoad(true);
+    sequence.loadSequence(gnomeDir);
+//    sequence.loadSequence(gnomeDir + "/gnome_", "png", 0, g.size(), 3);
     sequence.preloadAllFrames();	//this way there is no stutter when loading frames
     sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
     
@@ -74,14 +80,11 @@ void gnome::draw() {
 
 
 //--------------------------------------------------------------
-void gnome::randomGnome() {
+string gnome::chooseRandomGnome() {
     // Randomly choose a gnome from directory
     ofDirectory dir(gnomesDirectory);
     dir.listDir();
-    gnome = dir.getPath(floor(ofRandom(dir.size())));
-    ofDirectory g(gnome);
-    g.listDir();
-    sequence.loadSequence(gnome + "/gnome_", "png", 1, g.size(), 3);
+    return dir.getPath(floor(ofRandom(dir.size())));
     
 //    sequence.loadSequence(dir.getPath(floor(ofRandom(dir.size()))));
 //    vid.load(dir.getPath(floor(ofRandom(dir.size()))));

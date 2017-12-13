@@ -2,7 +2,7 @@
 //        / /__  / __/ __/_  __
 //   __  / / _ \/ /_/ /_/ / / /
 //  / /_/ /  __/ __/ __/ /_/ /
-//  \____/\___/_/ /_/  \__,_/   LILLIPUT ©2017     */
+//  \____/\___/_/ /_/  \__,_/   LILLIPUT Â©2017     */
 
 //  ofApp.cpp
 //  Lilliput
@@ -28,8 +28,8 @@ void ofApp::setup(){
     depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
     depthShader.linkProgram();
     
-    
-    isRecording = false;
+    recordingState = PAUSED;
+//    isRecording = false;
     humanDetected = false;
     gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
     // Would like to read this from a .txt file - even better, to pick a folder.
@@ -46,6 +46,8 @@ void ofApp::setup(){
     process_occlusion = false;
     draw_video = true;
     maxFramesPerGnome = 900;
+    recordingDelay = 1.0f;
+    recordingTimer = 0.0f;
 
     
     // Kinect
@@ -75,7 +77,13 @@ void ofApp::update(){
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         
-        if (isRecording) {
+        if (recordingState == WAITING) {
+            if (ofGetElapsedTimef() > recordingTimer) {
+                startRecording();
+            }
+        }
+        
+        if (recordingState == RECORDING) {
             checkRecording();
             theGnome.update();
         }
@@ -91,7 +99,7 @@ void ofApp::draw(){
         
         colorTex0.draw(0, 0, w, h);
         
-        if (isRecording) {
+        if (recordingState == RECORDING) {
 //            frameFbo.draw(0, 0, w, h);
             theGnome.draw();
         }
@@ -125,25 +133,32 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::detectHuman(){
-    if (humanDetected && !isRecording) {
-        startRecording();
-    } else if (!humanDetected && isRecording) {
+    if (humanDetected) {
+        if (recordingState == PAUSED) {
+            // Start Recording Timer
+            recordingState = WAITING;
+            recordingTimer = recordingDelay + ofGetElapsedTimef();
+        }
+    } else {
+        recordingState = PAUSED;
         stopRecording();
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::startRecording(){
-    isRecording = true;
+//    isRecording = true;
+    recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
-    theGnome.randomGnome();
+    theGnome.chooseRandomGnome();
     // Might set up a timer - start recording after 15-30 frames
 }
 
 //--------------------------------------------------------------
 void ofApp::stopRecording(){
-    isRecording = false;
+    recordingState = PAUSED;
+//    isRecording = false;
     // Clean up the last 15-20 frames - they will be garbage
 }
 
@@ -223,8 +238,7 @@ void ofApp::saveFrame(){
     frameFbo.allocate(saveW, saveH, GL_RGBA);
     frameFbo.begin();
     ofClear(0, 0, 0, 0);
-    alphaShader.begin();
-    // pass depth fbo to the alpha shader
+    alphaShader.begin();    // pass depth fbo to the alpha shader
     alphaShader.setUniformTexture("maskTex", depthFbo.getTexture(), 1 );
     gr.getRegisteredTexture(process_occlusion).draw(0, 0, saveW, saveH);
     alphaShader.end();

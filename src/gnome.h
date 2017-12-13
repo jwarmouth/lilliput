@@ -30,7 +30,7 @@ public:
     void update();
     void draw();
     void fall();
-    void randomGnome();
+    string chooseRandomGnome();
     void gravity();
     
     // Properties
@@ -40,7 +40,7 @@ public:
     int h;
     float speed;
     string gnomesDirectory;
-    string gnome;
+    string gnomeDir;
     ofxImageSequence sequence;
     
 //    ofVideoPlayer vid;
@@ -51,4 +51,7 @@ public:
     int vidHeight;
     float terminalVelocity;
     ofPixels pix;
+    
+//    ball(); // constructor
+//    http://openframeworks.cc/ofBook/chapters/OOPs!.html 
 };

@@ -16,18 +16,27 @@
 #include "gnome.h"
 #include "GpuRegistration.h"
 #include "ofxImageSequence.h"
+
+typedef enum {
+    PAUSED,
+    WAITING,
+    RECORDING
+} RecordingState;
+
 class ofApp : public ofBaseApp{
 
-
-    
 public:
+    RecordingState recordingState;
     bool isRecording;
     bool humanDetected;
+    bool isWaitingToRecord;
     string gnomeDirectory;
     string currentPath;
     string fileName;
     int frameCount;
     int maxFramesPerGnome;
+    float recordingDelay;
+    float recordingTimer;
 //    ofFile saveLocation;
     
     ofxMultiKinectV2 kinect0;
@@ -62,6 +71,8 @@ public:
 //    int numGnomes;
 //    gnome gnomes[5];
     gnome theGnome;
+    
+    vector <gnome> gnomes;
     
     //    Video Recorder
 //    ofPtr<ofQTKitGrabber> vidRecorder;

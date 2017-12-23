@@ -1,25 +1,56 @@
+//         __     ________
+//        / /__  / __/ __/_  __
+//   __  / / _ \/ /_/ /_/ / / /
+//  / /_/ /  __/ __/ __/ /_/ /
+//  \____/\___/_/ /_/  \__,_/   LILLIPUT ©2017     */
+
+//  ofApp.h
+//  Lilliput
+
 #pragma once
 
 #include "ofMain.h"
 #include "ofxMultiKinectV2.h"
 #include "ofxOpenCv.h"
+<<<<<<< HEAD
 //#include "ofxVideoRecorder.h"
 //#include "gnome.h"
+=======
+#include "ofxVideoRecorder.h"
+#include "gnome.h"
+>>>>>>> fixKinectAgain
 #include "GpuRegistration.h"
+#include "ofxImageSequence.h"
 
+<<<<<<< HEAD
 class ofApp : public ofBaseApp{
     
+=======
+typedef enum {
+    PAUSED,
+    WAITING,
+    RECORDING
+} RecordingState;
+
+class ofApp : public ofBaseApp{
+
+>>>>>>> fixKinectAgain
 public:
+    RecordingState recordingState;
     bool isRecording;
     bool humanDetected;
+    bool isWaitingToRecord;
     string gnomeDirectory;
     string currentPath;
     string fileName;
     int frameCount;
     int maxFramesPerGnome;
+    float recordingDelay;
+    float recordingTimer;
 //    ofFile saveLocation;
     
     ofxMultiKinectV2 kinect0;
+<<<<<<< HEAD
     ofTexture colorTex0;
     ofTexture depthTex0;
 //    ofTexture testTex0;
@@ -28,15 +59,33 @@ public:
     ofFbo frameFbo;
     
     ofShader depthShader;
+=======
+    
+    ofTexture colorTex0;
+    ofTexture depthTex0;
+    ofTexture irTex0;
+    
+    GpuRegistration gr;
+    
+    ofShader depthShader;
+    ofShader irShader;
+>>>>>>> fixKinectAgain
     ofShader alphaShader;
+    ofFbo frameFbo;
     
     bool process_occlusion;
     bool draw_depth;
     bool draw_registered;
+    bool draw_ir;
     bool draw_video;
+<<<<<<< HEAD
+=======
+    bool calibrate;
+
+>>>>>>> fixKinectAgain
     
     //  Width & Height of Video
-    int w, h, depthH, depthW;
+    int w, h, depthH, depthW, saveW, saveH;
     float screenRotation;
     
     //  Kinect & OpenCV Variables
@@ -50,8 +99,11 @@ public:
     //    ofxCvContourFinder contourFinder;
     
     //     The Gnomes
-//    int numGnomes;
-//    gnome gnomes[5];
+    int numGnomes;
+    gnome gnomes[5];
+//    gnome theGnome;
+    
+//    vector <gnome> gnomes;
     
     
     // Jeffu methods
@@ -63,6 +115,8 @@ public:
     void calculateAlpha();
     void checkRecording();
     void checkKeys();
+    void calibrateBackground();
+    void defineShaders();
     
     // openFrameworks methods
     void setup();
@@ -111,13 +165,13 @@ STRINGIFY(
           );
 
 
-//static string irFragmentShader =
-//STRINGIFY(
-//          uniform sampler2DRect tex;
-//          void main()
-//          {
-//              vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
-//              float value = col.r / 65535.0;
-//              gl_FragColor = vec4(vec3(value), 1.0);
-//          }
-//          );
+static string irFragmentShader =
+STRINGIFY(
+          uniform sampler2DRect tex;
+          void main()
+          {
+              vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
+              float value = col.r / 65535.0;
+              gl_FragColor = vec4(vec3(value), 1.0);
+          }
+          );

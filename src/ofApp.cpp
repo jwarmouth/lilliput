@@ -1,24 +1,26 @@
+//         __     ________
+//        / /__  / __/ __/_  __
+//   __  / / _ \/ /_/ /_/ / / /
+//  / /_/ /  __/ __/ __/ /_/ /
+//  \____/\___/_/ /_/  \__,_/   LILLIPUT ©2017     */
+
+//  ofApp.cpp
+//  Lilliput
+
 #include "ofApp.h"
+
 
 
 //--------------------------------------------------------------
 void ofApp::setup(){
     
-    // Shaders
-    #ifdef TARGET_OPENGLES
-        alphaShader.load("shadersES2/shader");
-    #else
-        if(ofIsGLProgrammableRenderer()){
-            alphaShader.load("shadersGL3/shader");
-        }else{
-            alphaShader.load("shadersGL2/shader");
-        }
-    #endif
+    defineShaders();
     
-    depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
-    depthShader.linkProgram();
-    
+<<<<<<< HEAD
     isRecording = false;
+=======
+    recordingState = PAUSED;
+>>>>>>> fixKinectAgain
     humanDetected = false;
     gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
     // Would like to read this from a .txt file - even better, to pick a folder.
@@ -27,18 +29,28 @@ void ofApp::setup(){
     h = 1080;
     depthW = 1500;
     depthH = 1080;
+    saveW = 1024; //256 / 512 / 1024;
+    saveH = 848; //212 / 424 / 848;
+    
     screenRotation = 90;
-    ofSetFrameRate(60);
+    ofSetFrameRate(30);
     ofEnableAlphaBlending();
     ofEnableSmoothing();
     ofSetVerticalSync(true);
     process_occlusion = false;
     draw_video = true;
     maxFramesPerGnome = 900;
+    recordingDelay = 0.5f;
+    recordingTimer = 0.0f;
+    calibrate = true;
 
     
+<<<<<<< HEAD
     // Kinect
     
+=======
+    // Initialize Kinect
+>>>>>>> fixKinectAgain
     kinect0.open(true, true, 0, 2);
     // Note :
     // Default OpenCL device might not be optimal.
@@ -49,12 +61,17 @@ void ofApp::setup(){
     kinect0.start();
     gr.setup(kinect0.getProtonect(), 2);
     
-    // initialize gnomes
-    //    numGnomes = 5;
-    //    for (int i=0; i<numGnomes; i++) {
-    //        gnomes[i].setup();
-    //    }
-
+    
+    // Loop through and initialize Gnomes
+    numGnomes = 5;
+    for (int i=0; i<numGnomes; i++) {
+        gnomes[i].setup();
+        
+        // If we use a vector we should use this code
+//        gnome tempGnome;
+//        tempGnome.setup();
+//        gnomes.push_back(tempGnome);
+    }
 }
 
 //--------------------------------------------------------------
@@ -64,13 +81,36 @@ void ofApp::update(){
     if (kinect0.isFrameNew()){
         colorTex0.loadData(kinect0.getColorPixelsRef());
         depthTex0.loadData(kinect0.getDepthPixelsRef());
+        irTex0.loadData(kinect0.getIrPixelsRef());
+        
+        if (calibrate) {
+            calibrateBackground();
+        }
         
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         
-        if (isRecording) {
+        // Wait 1 second before beginning to record Gnome
+        if (recordingState == WAITING) {
+            if (ofGetElapsedTimef() > recordingTimer) {
+                startRecording();
+            }
+        }
+        
+        if (recordingState == RECORDING) {
             checkRecording();
+        }
+        
+        if (calibrate) {
+            calibrateBackground();
+        }
+        
+        // Loop through & Update Gnomes if active
+        for (int i=0; i<numGnomes; i++) {
+            if (gnomes[i].activeGnome) {
+                gnomes[i].update();
+            }
         }
     }
 }
@@ -85,14 +125,25 @@ void ofApp::draw(){
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         
+<<<<<<< HEAD
         
         if (isRecording) {
             frameFbo.draw(0, 0, w, h);
+=======
+        // Draw Kinect video frame
+        colorTex0.draw(0, 0, w, h);
+        
+        if (draw_depth) {
+            depthShader.begin();
+            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+            depthShader.end();
+>>>>>>> fixKinectAgain
         }
         
-        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
-        else if (draw_video) {
-            colorTex0.draw(0, 0, w, h);
+        if (draw_ir) {
+            irShader.begin();
+            irTex0.draw(210, 0, depthW, depthH);
+            irShader.end();
         }
         
         if (draw_registered) {
@@ -100,14 +151,22 @@ void ofApp::draw(){
 //            gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
         }
         
-        if (draw_depth) {
-            depthShader.begin();
-            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-            depthShader.end();
+//        if (recordingState == RECORDING) {
+////            frameFbo.draw(0, 0, w, h);
+//        }
+        
+        // Loop through & Draw Gnomes
+        for (int i=0; i<numGnomes; i++) {
+            if (gnomes[i].activeGnome) {
+                gnomes[i].draw();
+            }
         }
+        
+        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
     }
     
     ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
+<<<<<<< HEAD
     
     //        //      Set RGBA Image
     //        ofPixels & colorPix = colorImg.getPixels();
@@ -130,30 +189,47 @@ void ofApp::draw(){
 //    }
     
     // https://forum.openframeworks.cc/t/simple-program-for-randomly-displaying-videos/17876/5
+=======
+>>>>>>> fixKinectAgain
 
 }
 
 
 //--------------------------------------------------------------
 void ofApp::detectHuman(){
-    if (humanDetected && !isRecording) {
-        startRecording();
-    } else if (!humanDetected && isRecording) {
+    if (humanDetected) {
+        if (recordingState == PAUSED) {
+            // Start Recording Timer
+            recordingState = WAITING;
+            recordingTimer = recordingDelay + ofGetElapsedTimef();
+        }
+    } else {
+        recordingState = PAUSED;
         stopRecording();
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::startRecording(){
-    isRecording = true;
+//    isRecording = true;
+    recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
+    
+    for (int i=0; i<numGnomes; i++) {
+        if (!gnomes[i].activeGnome) {
+            gnomes[i].setup();
+            return;
+        }
+    }
+//    theGnome.chooseRandomGnome();
     // Might set up a timer - start recording after 15-30 frames
 }
 
 //--------------------------------------------------------------
 void ofApp::stopRecording(){
-    isRecording = false;
+    recordingState = PAUSED;
+//    isRecording = false;
     // Clean up the last 15-20 frames - they will be garbage
 }
 
@@ -178,6 +254,13 @@ void ofApp::keyPressed(int key){
         draw_video = !draw_video;
     }
     
+    if (key == 'i') {
+        draw_ir = !draw_ir;
+    }
+    
+    if (key == 'c') {
+        calibrate = true;
+    }
 }
 
 //--------------------------------------------------------------
@@ -200,9 +283,6 @@ void ofApp::checkRecording(){
 
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
-    
-    int saveW = 1024; //512;
-    int saveH = 848; //424;
     
     // Draw the depth texture into a Frame Buffer Object
     ofFbo depthFbo;
@@ -233,8 +313,7 @@ void ofApp::saveFrame(){
     frameFbo.allocate(saveW, saveH, GL_RGBA);
     frameFbo.begin();
     ofClear(0, 0, 0, 0);
-    alphaShader.begin();
-    // pass depth fbo to the alpha shader
+    alphaShader.begin();    // pass depth fbo to the alpha shader
     alphaShader.setUniformTexture("maskTex", depthFbo.getTexture(), 1 );
     gr.getRegisteredTexture(process_occlusion).draw(0, 0, saveW, saveH);
     alphaShader.end();
@@ -243,7 +322,7 @@ void ofApp::saveFrame(){
     // Prepare pixels object
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
-    fileName = currentPath + "/gnome_" + ofToString(frameCount) + ".png";
+    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
     ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
     
     // IT WORKS!!! Saves .png sequence with alpha channel
@@ -255,7 +334,6 @@ void ofApp::saveFrame(){
 }
 
 //--------------------------------------------------------------
-
 void ofApp::makeNewDirectory(){
     currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
     ofDirectory dir(currentPath);
@@ -275,7 +353,35 @@ void ofApp::makeNewDirectory(){
 }
 
 //--------------------------------------------------------------
+void ofApp::defineShaders(){
+    
+    // Define Shaders - thanks to Yuya Hanai
+    #ifdef TARGET_OPENGLES
+        alphaShader.load("shadersES2/shader");
+    
+    #else
+        if(ofIsGLProgrammableRenderer()){
+            alphaShader.load("shadersGL3/shader");
+        }else{
+            alphaShader.load("shadersGL2/shader");
+        }
+    #endif
+    
+    depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
+    depthShader.linkProgram();
+    
+    irShader.setupShaderFromSource(GL_FRAGMENT_SHADER, irFragmentShader);
+    irShader.linkProgram();
+}
+
+//--------------------------------------------------------------
+void ofApp::calibrateBackground(){
+    calibrate = false;
+}
+
+//--------------------------------------------------------------
 void ofApp::calculateAlpha(){
     
 }
+
 

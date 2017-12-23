@@ -75,11 +75,11 @@ public:
     //    ofxCvContourFinder contourFinder;
     
     //     The Gnomes
-//    int numGnomes;
-//    gnome gnomes[5];
-    gnome theGnome;
+    int numGnomes;
+    gnome gnomes[5];
+//    gnome theGnome;
     
-    vector <gnome> gnomes;
+//    vector <gnome> gnomes;
     
     //    Video Recorder
 //    ofPtr<ofQTKitGrabber> vidRecorder;
@@ -96,6 +96,7 @@ public:
     void checkRecording();
     void checkKeys();
     void calibrateBackground();
+    void defineShaders();
     
     
     // openFrameworks methods

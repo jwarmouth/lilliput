@@ -32,6 +32,9 @@ public:
     void fall();
     string chooseRandomGnome();
     void gravity();
+    void loadGnomeSequence();
+    void setRandomPosition();
+    void calculateGravity();
     
     // Properties
     float x;
@@ -41,7 +44,9 @@ public:
     float speed;
     string gnomesDirectory;
     string gnomeDir;
+    int numFrames;
     ofxImageSequence sequence;
+    bool activeGnome;
     
 //    ofVideoPlayer vid;
 //    bool playing;

@@ -14,25 +14,9 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     
-    // Shaders
-    #ifdef TARGET_OPENGLES
-        alphaShader.load("shadersES2/shader");
-    #else
-        if(ofIsGLProgrammableRenderer()){
-            alphaShader.load("shadersGL3/shader");
-        }else{
-            alphaShader.load("shadersGL2/shader");
-        }
-    #endif
-    
-    depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
-    depthShader.linkProgram();
-    
-    irShader.setupShaderFromSource(GL_FRAGMENT_SHADER, irFragmentShader);
-    irShader.linkProgram();
+    defineShaders();
     
     recordingState = PAUSED;
-//    isRecording = false;
     humanDetected = false;
     gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
     // Would like to read this from a .txt file - even better, to pick a folder.
@@ -45,7 +29,7 @@ void ofApp::setup(){
     saveH = 848; //212 / 424 / 848;
     
     screenRotation = 90;
-    ofSetFrameRate(60);
+    ofSetFrameRate(30);
     ofEnableAlphaBlending();
     ofEnableSmoothing();
     ofSetVerticalSync(true);
@@ -57,19 +41,22 @@ void ofApp::setup(){
     calibrate = true;
 
     
-    // Kinect
+    // Initialize Kinect
     kinect0.open(true, true, 0, 2);
     kinect0.start();
     gr.setup(kinect0.getProtonect(), 2);
     
-    // initialize gnomes
-    //    numGnomes = 5;
-    //    for (int i=0; i<numGnomes; i++) {
-    //        gnomes[i].setup();
-    //    }
     
-    theGnome.setup();
-
+    // Loop through and initialize Gnomes
+    numGnomes = 5;
+    for (int i=0; i<numGnomes; i++) {
+        gnomes[i].setup();
+        
+        // If we use a vector we should use this code
+//        gnome tempGnome;
+//        tempGnome.setup();
+//        gnomes.push_back(tempGnome);
+    }
 }
 
 //--------------------------------------------------------------
@@ -89,6 +76,7 @@ void ofApp::update(){
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         
+        // Wait 1 second before beginning to record Gnome
         if (recordingState == WAITING) {
             if (ofGetElapsedTimef() > recordingTimer) {
                 startRecording();
@@ -103,7 +91,12 @@ void ofApp::update(){
             calibrateBackground();
         }
         
-        theGnome.update();
+        // Loop through & Update Gnomes if active
+        for (int i=0; i<numGnomes; i++) {
+            if (gnomes[i].activeGnome) {
+                gnomes[i].update();
+            }
+        }
     }
 }
 
@@ -114,6 +107,7 @@ void ofApp::draw(){
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         
+        // Draw Kinect video frame
         colorTex0.draw(0, 0, w, h);
         
         if (draw_depth) {
@@ -137,23 +131,17 @@ void ofApp::draw(){
 ////            frameFbo.draw(0, 0, w, h);
 //        }
         
-        theGnome.draw();
-        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
-//        else if (draw_video) {
-//            colorTex0.draw(0, 0, w, h);
-//        }
+        // Loop through & Draw Gnomes
+        for (int i=0; i<numGnomes; i++) {
+            if (gnomes[i].activeGnome) {
+                gnomes[i].draw();
+            }
+        }
         
-
-//        
-
+        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
     }
     
     ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
-    
-    //  Loop through & display Gnomes
-//    for (int i=0; i<numGnomes; i++) {
-//        gnomes[i].draw();
-//    }
 
 }
 
@@ -178,7 +166,14 @@ void ofApp::startRecording(){
     recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
-    theGnome.chooseRandomGnome();
+    
+    for (int i=0; i<numGnomes; i++) {
+        if (!gnomes[i].activeGnome) {
+            gnomes[i].setup();
+            return;
+        }
+    }
+//    theGnome.chooseRandomGnome();
     // Might set up a timer - start recording after 15-30 frames
 }
 
@@ -217,7 +212,6 @@ void ofApp::keyPressed(int key){
     if (key == 'c') {
         calibrate = true;
     }
-    
 }
 
 //--------------------------------------------------------------
@@ -307,6 +301,28 @@ void ofApp::makeNewDirectory(){
     //    for(int i = 0; i < dir.size(); i++){  //loop through and print out all the paths
     //        ofLogNotice(dir.getPath(i));
     //    }
+}
+
+//--------------------------------------------------------------
+void ofApp::defineShaders(){
+    
+    // Define Shaders - thanks to Yuya Hanai
+    #ifdef TARGET_OPENGLES
+        alphaShader.load("shadersES2/shader");
+    
+    #else
+        if(ofIsGLProgrammableRenderer()){
+            alphaShader.load("shadersGL3/shader");
+        }else{
+            alphaShader.load("shadersGL2/shader");
+        }
+    #endif
+    
+    depthShader.setupShaderFromSource(GL_FRAGMENT_SHADER, depthFragmentShader);
+    depthShader.linkProgram();
+    
+    irShader.setupShaderFromSource(GL_FRAGMENT_SHADER, irFragmentShader);
+    irShader.linkProgram();
 }
 
 //--------------------------------------------------------------

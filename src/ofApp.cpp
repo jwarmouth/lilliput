@@ -2,7 +2,7 @@
 //        / /__  / __/ __/_  __
 //   __  / / _ \/ /_/ /_/ / / /
 //  / /_/ /  __/ __/ __/ /_/ /
-//  \____/\___/_/ /_/  \__,_/   LILLIPUT Â©2017     */
+//  \____/\___/_/ /_/  \__,_/   LILLIPUT ©2017     */
 
 //  ofApp.cpp
 //  Lilliput
@@ -141,7 +141,14 @@ void ofApp::draw(){
         // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
     }
     
+    // Draw Frame Rate to screen
     ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
+    
+    // Draw Recording Icon
+    if (recordingState == RECORDING) {
+        ofSetColor(255, 0, 0);
+        ofDrawCircle(30, 50, 15);
+    }
 
 }
 

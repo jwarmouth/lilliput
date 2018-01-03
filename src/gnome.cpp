@@ -46,7 +46,7 @@ void gnome::draw() {
     //get the frame based on the current time and draw it
     sequence.getFrameForTime(ofGetElapsedTimef())->draw(x,y, w, h);
     
-    ofDrawBitmapStringHighlight(ofToString(numFrames), x, y);
+    ofDrawBitmapStringHighlight( ofToString(numFrames), x, y);
 //    ofDrawBitmapStringHighlight(ofToString(ofGetElapsedTimef()), x, y);
     
     

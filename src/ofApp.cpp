@@ -260,18 +260,18 @@ void ofApp::saveFrame(){
     alphaShader.end();
     frameFbo.end();
     
+    
     // Prepare pixels object
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
-    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
-    ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
+//    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
+//    ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
     
-    // IT WORKS!!! Saves .png sequence with alpha channel
-
-//    how to draw into fbo and save fbo to png file....
-//    https://forum.openframeworks.cc/t/convert-int-to-char/1632/7
-//    https://forum.openframeworks.cc/t/saving-frames-with-transparent-background/26363/7
-//    http://openframeworks.cc/documentation/gl/ofFbo/
+    //  IT WORKS!!! Saves .png sequence with alpha channel
+    //  how to draw into fbo and save fbo to png file....
+    //  https://forum.openframeworks.cc/t/convert-int-to-char/1632/7
+    //  https://forum.openframeworks.cc/t/saving-frames-with-transparent-background/26363/7
+    //  http://openframeworks.cc/documentation/gl/ofFbo/
 }
 
 //--------------------------------------------------------------
@@ -279,18 +279,9 @@ void ofApp::makeNewDirectory(){
     currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
     ofDirectory dir(currentPath);
     dir.createDirectory(currentPath);
+    
     // IT WORKS!!!
-    
-    //    create a unique directory based on system time stamp
     //    http://openframeworks.cc/documentation/utils/ofDirectory/
-    
-    //    string path = "/my/path/file";    // path may be absolute or relative to bin/data
-    //    ofDirectory dir(path);
-    //    dir.allowExt("png");  //only show png files
-    //    dir.listDir();    //populate the directory object
-    //    for(int i = 0; i < dir.size(); i++){  //loop through and print out all the paths
-    //        ofLogNotice(dir.getPath(i));
-    //    }
 }
 
 //--------------------------------------------------------------

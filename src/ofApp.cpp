@@ -67,31 +67,28 @@ void ofApp::update(){
     if (kinect0.isFrameNew()){
         colorTex0.loadData(kinect0.getColorPixelsRef());
         depthTex0.loadData(kinect0.getDepthPixelsRef());
-        irTex0.loadData(kinect0.getIrPixelsRef());
         
-        if (calibrate) {
-            calibrateBackground();
+        if (draw_ir) {
+            irTex0.loadData(kinect0.getIrPixelsRef());
         }
+        
+//        if (calibrate) {
+//            calibrateBackground();
+//        }
         
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         
-        // Wait 1 second before beginning to record Gnome
-        if (recordingState == WAITING) {
-            if (ofGetElapsedTimef() > recordingTimer) {
-                startRecording();
-            }
-        }
-        
         if (recordingState == RECORDING) {
             checkRecording();
         }
         
-        if (calibrate) {
-            calibrateBackground();
+        // Wait 1 second before beginning to record Gnome
+        else if (recordingState == WAITING && ofGetElapsedTimef() > recordingTimer) {
+            startRecording();
         }
-        
+
         // Loop through & Update Gnomes if active
         for (int i=0; i<numGnomes; i++) {
             if (gnomes[i].activeGnome) {
@@ -104,52 +101,55 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofBackground(255);
-    ofSetColor(255, 255, 255);
+    ofSetColor(255);
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         
-        // Draw Kinect video frame
+    // Draw Kinect video frame
         colorTex0.draw(0, 0, w, h);
         
+    // Draw Depth
         if (draw_depth) {
             depthShader.begin();
             depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
             depthShader.end();
         }
         
+    // Draw IR
         if (draw_ir) {
             irShader.begin();
             irTex0.draw(210, 0, depthW, depthH);
             irShader.end();
         }
         
+    // Draw Registered
         if (draw_registered) {
             gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-//            gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
+            // gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
         }
         
-//        if (recordingState == RECORDING) {
-////            frameFbo.draw(0, 0, w, h);
-//        }
-        
-        // Loop through & Draw Gnomes
+    // Loop through & Draw Gnomes
         for (int i=0; i<numGnomes; i++) {
             if (gnomes[i].activeGnome) {
                 gnomes[i].draw();
             }
         }
         
+    // Draw Recording Icon
+        if (recordingState == RECORDING) {
+            // Draw Recorded frame
+            // frameFbo.draw(0, 0, w, h);
+            
+            ofSetColor(255, 0, 0);
+            ofDrawCircle(30, 50, 15);
+        }
+        
         // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
     }
     
     // Draw Frame Rate to screen
-    ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
+        ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
     
-    // Draw Recording Icon
-    if (recordingState == RECORDING) {
-        ofSetColor(255, 0, 0);
-        ofDrawCircle(30, 50, 15);
-    }
 
 }
 
@@ -171,10 +171,6 @@ void ofApp::detectHuman(){
             stopRecording();
         }
     }
-    
-    
-    
-    
 }
 
 //--------------------------------------------------------------
@@ -183,12 +179,12 @@ void ofApp::startRecording(){
     frameCount = 0;
     makeNewDirectory();
     
-    for (int i=0; i<numGnomes; i++) {
-        if (!gnomes[i].activeGnome) {
-            gnomes[i].setup();
-            return;
-        }
-    }
+//    for (int i=0; i<numGnomes; i++) {
+//        if (!gnomes[i].activeGnome) {
+//            gnomes[i].setup();
+//            return;
+//        }
+//    }
 //    theGnome.chooseRandomGnome();
 }
 
@@ -214,43 +210,7 @@ void ofApp::stopRecording(){
     // fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
 }
 
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-    if (key == ' ') {
-        humanDetected = true;
-    }
-    if (key =='r') {
-        draw_registered = !draw_registered;
-    }
-    
-    if (key == 'd') {
-        draw_depth = !draw_depth;
-    }
-    
-    if (key == 'o') {
-        process_occlusion = !process_occlusion;
-    }
-    
-    if (key == 'v') {
-        draw_video = !draw_video;
-    }
-    
-    if (key == 'i') {
-        draw_ir = !draw_ir;
-    }
-    
-    if (key == 'c') {
-        calibrate = true;
-    }
-}
 
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-    if (key == ' ') {
-        humanDetected = false;
-    }
-    // This will fail if a viewer jumps - or if they aren't actually on the mat
-}
 
 //--------------------------------------------------------------
 void ofApp::checkRecording(){
@@ -363,6 +323,44 @@ void ofApp::calibrateBackground(){
 //--------------------------------------------------------------
 void ofApp::calculateAlpha(){
     
+}
+
+//--------------------------------------------------------------
+void ofApp::keyPressed(int key){
+    if (key == ' ') {
+        humanDetected = true;
+    }
+    if (key =='r') {
+        draw_registered = !draw_registered;
+    }
+    
+    if (key == 'd') {
+        draw_depth = !draw_depth;
+    }
+    
+    if (key == 'o') {
+        process_occlusion = !process_occlusion;
+    }
+    
+    if (key == 'v') {
+        draw_video = !draw_video;
+    }
+    
+    if (key == 'i') {
+        draw_ir = !draw_ir;
+    }
+    
+    if (key == 'c') {
+        calibrate = true;
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::keyReleased(int key){
+    if (key == ' ') {
+        humanDetected = false;
+    }
+    // This will fail if a viewer jumps - or if they aren't actually on the mat
 }
 
 

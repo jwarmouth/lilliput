@@ -179,6 +179,10 @@ void ofApp::startRecording(){
     frameCount = 0;
     makeNewDirectory();
     
+    if(!recorder.isThreadRunning()){
+        recorder.startThread(false, true);
+    }
+    
 //    for (int i=0; i<numGnomes; i++) {
 //        if (!gnomes[i].activeGnome) {
 //            gnomes[i].setup();
@@ -191,6 +195,8 @@ void ofApp::startRecording(){
 //--------------------------------------------------------------
 void ofApp::stopRecording(){
     recordingState = PAUSED;
+    
+    recorder.waitForThread();
     
     // Set current recording path
     ofDirectory dir(currentPath);
@@ -264,6 +270,7 @@ void ofApp::saveFrame(){
     // Prepare pixels object
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
+    recorder.addFrame(pix);
 //    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
 //    ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
     
@@ -279,6 +286,11 @@ void ofApp::makeNewDirectory(){
     currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
     ofDirectory dir(currentPath);
     dir.createDirectory(currentPath);
+    
+    //recorder.setPrefix(ofToDataPath("recording1/frame_")); // this directory must already exist
+    
+    recorder.setPrefix(currentPath + "/gnome_"); // this directory must already exist
+    recorder.setFormat("png"); // png is really slow but high res, bmp is fast but big, jpg is just right
     
     // IT WORKS!!!
     //    http://openframeworks.cc/documentation/utils/ofDirectory/
@@ -352,6 +364,10 @@ void ofApp::keyReleased(int key){
         humanDetected = false;
     }
     // This will fail if a viewer jumps - or if they aren't actually on the mat
+}
+
+void ofApp::exit() {
+    recorder.waitForThread();
 }
 
 

@@ -12,10 +12,10 @@
 #include "ofMain.h"
 #include "ofxMultiKinectV2.h"
 #include "ofxOpenCv.h"
-#include "ofxVideoRecorder.h"
 #include "gnome.h"
 #include "GpuRegistration.h"
 #include "ofxImageSequence.h"
+#include "ofxImageSequenceRecorder.h"
 
 typedef enum {
     PAUSED,
@@ -39,6 +39,8 @@ public:
     float recordingDelay;
     float recordingTimer;
 //    ofFile saveLocation;
+    
+    ofxImageSequenceRecorder recorder; 
     
     ofxMultiKinectV2 kinect0;
     
@@ -108,6 +110,8 @@ public:
     
     void keyPressed(int key);
     void keyReleased(int key);
+    
+    void exit();
     
     //		void mouseMoved(int x, int y );
     //		void mouseDragged(int x, int y, int button);

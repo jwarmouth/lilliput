@@ -35,6 +35,7 @@ public:
     string fileName;
     int frameCount;
     int maxFramesPerGnome;
+    int minFramesPerGnome;
     float recordingDelay;
     float recordingTimer;
 //    ofFile saveLocation;

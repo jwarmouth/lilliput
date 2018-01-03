@@ -36,6 +36,7 @@ void ofApp::setup(){
     process_occlusion = false;
     draw_video = true;
     maxFramesPerGnome = 900;
+    minFramesPerGnome = 90;
     recordingDelay = 0.5f;
     recordingTimer = 0.0f;
     calibrate = true;
@@ -155,21 +156,29 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::detectHuman(){
-    if (humanDetected) {
-        if (recordingState == PAUSED) {
-            // Start Recording Timer
-            recordingState = WAITING;
-            recordingTimer = recordingDelay + ofGetElapsedTimef();
-        }
-    } else {
-        recordingState = PAUSED;
-        stopRecording();
+    
+    if (humanDetected && recordingState == PAUSED) {
+        recordingState = WAITING;
+        recordingTimer = recordingDelay + ofGetElapsedTimef();
+            // Set up a timer - start recording after 15-30 frames
     }
+    
+    if (!humanDetected) {
+        if (recordingState == WAITING) {
+            recordingState = PAUSED;
+        }
+        if (recordingState == RECORDING) {
+            stopRecording();
+        }
+    }
+    
+    
+    
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::startRecording(){
-//    isRecording = true;
     recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
@@ -181,14 +190,28 @@ void ofApp::startRecording(){
         }
     }
 //    theGnome.chooseRandomGnome();
-    // Might set up a timer - start recording after 15-30 frames
 }
 
 //--------------------------------------------------------------
 void ofApp::stopRecording(){
     recordingState = PAUSED;
-//    isRecording = false;
-    // Clean up the last 15-20 frames - they will be garbage
+    
+    // Set current recording path
+    ofDirectory dir(currentPath);
+    dir.listDir();
+    int size = dir.size();
+    
+    if (size < minFramesPerGnome) {
+        // Delete directory if fewer than 3 seconds / 90 frames
+        dir.remove(true);
+    } else {
+        // Clean up the last 15 frames - they will be garbage
+        for (int i = size - 15; i < size; i++) {
+            dir.getFile(i).remove();
+        }
+    }
+    
+    // fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
 }
 
 //--------------------------------------------------------------

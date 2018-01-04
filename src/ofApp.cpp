@@ -21,6 +21,10 @@ void ofApp::setup(){
     gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
     // Would like to read this from a .txt file - even better, to pick a folder.
     
+    // Set threadRecorder defaults
+    threadRecorder.setPrefix("/gnome_");
+    threadRecorder.setFormat("png"); // png is really slow but high res, bmp is fast but big, jpg is just right
+    
     w = 1920;
     h = 1080;
     depthW = 1500;
@@ -60,6 +64,7 @@ void ofApp::setup(){
     }
 }
 
+
 //--------------------------------------------------------------
 void ofApp::update(){
     detectHuman();
@@ -97,6 +102,7 @@ void ofApp::update(){
         }
     }
 }
+
 
 //--------------------------------------------------------------
 void ofApp::draw(){
@@ -173,15 +179,12 @@ void ofApp::detectHuman(){
     }
 }
 
+
 //--------------------------------------------------------------
 void ofApp::startRecording(){
     recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
-    
-    if(!recorder.isThreadRunning()){
-        recorder.startThread(false, true);
-    }
     
 //    for (int i=0; i<numGnomes; i++) {
 //        if (!gnomes[i].activeGnome) {
@@ -192,41 +195,26 @@ void ofApp::startRecording(){
 //    theGnome.chooseRandomGnome();
 }
 
+
 //--------------------------------------------------------------
-void ofApp::stopRecording(){
-    recordingState = PAUSED;
-    
-    recorder.waitForThread();
-    
-    // Set current recording path
+void ofApp::makeNewDirectory(){
+    currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
     ofDirectory dir(currentPath);
-    dir.listDir();
-    int size = dir.size();
+    dir.createDirectory(currentPath);
     
-    if (size < minFramesPerGnome) {
-        // Delete directory if fewer than 3 seconds / 90 frames
-        dir.remove(true);
-    } else {
-        // Clean up the last 15 frames - they will be garbage
-        for (int i = size - 15; i < size; i++) {
-            dir.getFile(i).remove();
-        }
+    // IT WORKS!!!  http://openframeworks.cc/documentation/utils/ofDirectory/
+    
+    //recorder.setPrefix(ofToDataPath("recording1/frame_")); // this directory must already exist
+    
+    threadRecorder.setPath(currentPath); // this directory must already exist
+    threadRecorder.setCounter(0);
+    
+    if(!threadRecorder.isThreadRunning()){
+        threadRecorder.startThread();
+        //        threadRecorder.startThread(false, true);
     }
-    
-    // fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
 }
 
-
-
-//--------------------------------------------------------------
-void ofApp::checkRecording(){
-    if (frameCount > maxFramesPerGnome) {
-        stopRecording();
-        // HMMM - what to do if someone wants to stay & play longer?
-    }
-    saveFrame();
-    frameCount ++;
-}
 
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
@@ -242,18 +230,18 @@ void ofApp::saveFrame(){
     depthFbo.end();
     
     // Draw the Registered video texture into a Frame Buffer Object
-//    ofFbo fbo;
-//    fbo.allocate(saveW, saveH, GL_RGBA);
-//    fbo.begin();	//Start drawing into buffer
-//    ofClear(0, 0, 0, 0);    // clear fbo
-////    float vidW = saveH * w / h;
-////    float vidH = saveH * 1.05;
-////    colorTex0.draw((vidW - saveW) / -2 , (vidH - saveH) / -2, vidW, vidH);
-//    // Draw Registered Texture, use Depth as alpha
-//    gr.getRegisteredTexture(process_occlusion).draw(0, 0, saveW, saveH);
-//    fbo.end();
-        //   fbo.getTexture().setAlphaMask(depthFbo.getTexture());
-        // Set the alpha mask -- no longer needed since we are using a shader
+    //    ofFbo fbo;
+    //    fbo.allocate(saveW, saveH, GL_RGBA);
+    //    fbo.begin();	//Start drawing into buffer
+    //    ofClear(0, 0, 0, 0);    // clear fbo
+    ////    float vidW = saveH * w / h;
+    ////    float vidH = saveH * 1.05;
+    ////    colorTex0.draw((vidW - saveW) / -2 , (vidH - saveH) / -2, vidW, vidH);
+    //    // Draw Registered Texture, use Depth as alpha
+    //    gr.getRegisteredTexture(process_occlusion).draw(0, 0, saveW, saveH);
+    //    fbo.end();
+    //   fbo.getTexture().setAlphaMask(depthFbo.getTexture());
+    // Set the alpha mask -- no longer needed since we are using a shader
     
     
     // Draw Registered Texture into new FBO using Depth as alpha shader
@@ -270,9 +258,9 @@ void ofApp::saveFrame(){
     // Prepare pixels object
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
-    recorder.addFrame(pix);
-//    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
-//    ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
+    threadRecorder.addFrame(pix);
+    //    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
+    //    ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
     
     //  IT WORKS!!! Saves .png sequence with alpha channel
     //  how to draw into fbo and save fbo to png file....
@@ -281,20 +269,56 @@ void ofApp::saveFrame(){
     //  http://openframeworks.cc/documentation/gl/ofFbo/
 }
 
+
 //--------------------------------------------------------------
-void ofApp::makeNewDirectory(){
-    currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
-    ofDirectory dir(currentPath);
-    dir.createDirectory(currentPath);
-    
-    //recorder.setPrefix(ofToDataPath("recording1/frame_")); // this directory must already exist
-    
-    recorder.setPrefix(currentPath + "/gnome_"); // this directory must already exist
-    recorder.setFormat("png"); // png is really slow but high res, bmp is fast but big, jpg is just right
-    
-    // IT WORKS!!!
-    //    http://openframeworks.cc/documentation/utils/ofDirectory/
+void ofApp::checkRecording(){
+    if (frameCount > maxFramesPerGnome) {
+        stopRecording();
+        // HMMM - what to do if someone wants to stay & play longer?
+    }
+    saveFrame();
+    frameCount ++;
 }
+
+
+//--------------------------------------------------------------
+void ofApp::stopRecording(){
+    
+    recordingState = PAUSED;
+    threadRecorder.addFrame();  // add a blank frame to trigger closeFolder
+    
+    
+    
+//    threadRecorder.waitForThread();
+    
+    
+    // Folder closing is now on threadRecorder
+    // as it is prematurely clamping the folder before anything is added
+    // SO, either set it in a single thread that can detect when the folder changes
+    // OR initiate a new thread for each Gnome clip - maybe 5 that can be cycled through?
+    
+    // TELL THE THREAD TO DO THIS - IN QUEUE
+    // SEND IT A BLACK IMAGE?
+    // ALLOW IT TO KNOW THE CURRENT PATH
+    
+//    // Set current recording path
+//    ofDirectory dir(currentPath);
+//    dir.listDir();
+//    int size = dir.size();
+//    
+//    if (size < minFramesPerGnome) {
+//        // Delete directory if fewer than 3 seconds / 90 frames
+//        dir.remove(true);
+//    } else {
+//        // Clean up the last 15 frames - they will be garbage
+//        for (int i = size - 15; i < size; i++) {
+//            dir.getFile(i).remove();
+//        }
+//    }
+    
+    // fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
+}
+
 
 //--------------------------------------------------------------
 void ofApp::defineShaders(){
@@ -318,15 +342,18 @@ void ofApp::defineShaders(){
     irShader.linkProgram();
 }
 
+
 //--------------------------------------------------------------
 void ofApp::calibrateBackground(){
     calibrate = false;
 }
 
+
 //--------------------------------------------------------------
 void ofApp::calculateAlpha(){
     
 }
+
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
@@ -358,6 +385,7 @@ void ofApp::keyPressed(int key){
     }
 }
 
+
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
     if (key == ' ') {
@@ -366,8 +394,10 @@ void ofApp::keyReleased(int key){
     // This will fail if a viewer jumps - or if they aren't actually on the mat
 }
 
+
+//--------------------------------------------------------------
 void ofApp::exit() {
-    recorder.waitForThread();
+    threadRecorder.waitForThread();
 }
 
 

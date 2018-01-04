@@ -40,7 +40,7 @@ public:
     float recordingTimer;
 //    ofFile saveLocation;
     
-    ofxImageSequenceRecorder recorder; 
+    ofxImageSequenceRecorder threadRecorder;
     
     ofxMultiKinectV2 kinect0;
     

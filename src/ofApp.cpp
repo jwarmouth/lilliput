@@ -41,8 +41,10 @@ void ofApp::setup(){
 //    draw_video = true;
     maxFramesPerGnome = 900;
     minFramesPerGnome = 90;
-    recordingDelay = 0.5f;
-    recordingTimer = 0.0f;
+    recordingDelay = 0.5;
+    recordingTimer = 0.0;
+    gnomeInterval = 3.0;
+    gnomeTimer = 0.0;
     calibrate = true;
     
     
@@ -97,15 +99,8 @@ void ofApp::update(){
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         
-    // Check recording if RECORDING
-        if (recordingState == RECORDING) {
-            checkRecording();
-        }
-        
-    // Wait 1 second before beginning to record Gnome
-        else if (recordingState == WAITING && ofGetElapsedTimef() > recordingTimer) {
-            startRecording();
-        }
+    // Check Recording
+        checkRecording();
 
     // Update Gnomes
         // Loop through & Update Gnomes if active
@@ -157,7 +152,7 @@ void ofApp::draw(){
         }
         
     // Draw Recording Icon
-        if (recordingState == RECORDING) {
+        if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
             // Draw Recorded frame
             // frameFbo.draw(0, 0, w, h);
             
@@ -178,38 +173,97 @@ void ofApp::draw(){
 
 
 //--------------------------------------------------------------
-void ofApp::detectHuman(){
+void ofApp::checkRecording(){
     
-    if (humanDetected && recordingState == PAUSED) {
-        recordingState = WAITING;
-        recordingTimer = recordingDelay + ofGetElapsedTimef();
-            // Set up a timer - start recording after 15-30 frames
+    if (recordingState == PAUSED) {
+        return;
     }
     
-    if (!humanDetected) {
-        if (recordingState == WAITING) {
-            recordingState = PAUSED;
+    if (recordingState == WAITING) {
+        if (ofGetElapsedTimef() > recordingTimer) {
+            startRecording();
         }
-        if (recordingState == RECORDING) {
-            stopRecording();
+    }
+    
+    else if (recordingState == WAITING_TO_STOP && ofGetElapsedTimef() > recordingTimer) {
+        stopRecording();
+    }
+    
+    else if (frameCount > maxFramesPerGnome) {
+        stopRecording();
+        // HMMM - what to do if someone wants to stay & play longer?
+    }
+    
+    else {
+        saveFrame();
+        frameCount ++;
+        if (ofGetElapsedTimef() > gnomeTimer) {
+            activateGnome();
         }
     }
 }
 
 
 //--------------------------------------------------------------
+void ofApp::detectHuman(){
+    
+    if (humanDetected) {
+        if (recordingState == PAUSED) {
+            waitToStartRecording();
+        }
+        else if (recordingState == WAITING_TO_STOP) {
+            recordingState = RECORDING;
+        }
+    } else {
+        if (recordingState == WAITING) {
+            recordingState = PAUSED;
+        }
+        else if (recordingState == RECORDING) {
+            waitToStopRecording();
+        }
+    }
+}
+
+
+//--------------------------------------------------------------
+void ofApp::waitToStartRecording(){
+    
+    recordingState = WAITING;
+    recordingTimer = ofGetElapsedTimef() + recordingDelay;
+
+}
+
+//--------------------------------------------------------------
+void ofApp::waitToStopRecording(){
+    
+    recordingState = WAITING_TO_STOP;
+    recordingTimer = ofGetElapsedTimef() + recordingDelay;
+    
+}
+
+
+//--------------------------------------------------------------
 void ofApp::startRecording(){
+    
     recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
+    activateGnome();
+}
+
+
+//--------------------------------------------------------------
+void ofApp::activateGnome(){
+
+    for (int i=0; i<numGnomes; i++) {
+        if (!gnomes[i].activeGnome) {
+            gnomes[i].reset();
+            gnomeTimer = ofGetElapsedTimef() + gnomeInterval + ofRandom(5);
+            return;
+        }
+    }
+    //    theGnome.chooseRandomGnome();
     
-//    for (int i=0; i<numGnomes; i++) {
-//        if (!gnomes[i].activeGnome) {
-//            gnomes[i].setup();
-//            return;
-//        }
-//    }
-//    theGnome.chooseRandomGnome();
 }
 
 
@@ -312,26 +366,12 @@ void ofApp::saveFrame(){
 
 
 //--------------------------------------------------------------
-void ofApp::checkRecording(){
-    if (frameCount > maxFramesPerGnome) {
-        stopRecording();
-        // HMMM - what to do if someone wants to stay & play longer?
-    }
-    saveFrame();
-    frameCount ++;
-}
-
-
-//--------------------------------------------------------------
 void ofApp::stopRecording(){
     
     recordingState = PAUSED;
-    threadRecorder.addFrame();  // add a blank frame to trigger closeFolder
-    
-    // Folder closing is now called on threadRecorder
-    // addFrame() with no image will allocate a 1x1 px black image
-    
-    //    threadRecorder.waitForThread();
+    threadRecorder.addFrame();
+        // add a blank frame to trigger closeFolder on threadRecorder
+        // addFrame() with no image will allocate a 1x1 px black image
 }
 
 

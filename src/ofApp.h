@@ -20,7 +20,8 @@
 typedef enum {
     PAUSED,
     WAITING,
-    RECORDING
+    RECORDING,
+    WAITING_TO_STOP
 } RecordingState;
 
 class ofApp : public ofBaseApp{
@@ -29,7 +30,7 @@ public:
     bool isRecording, humanDetected, isWaitingToRecord;
     string gnomeDirectory, currentPath, fileName;
     int frameCount, maxFramesPerGnome, minFramesPerGnome;
-    float recordingDelay, recordingTimer;
+    float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer;
     
     ofxImageSequenceRecorder threadRecorder;
     RecordingState recordingState;
@@ -68,6 +69,8 @@ public:
     void detectHuman();
     void startRecording();
     void stopRecording();
+    void waitToStartRecording();
+    void waitToStopRecording();
     void saveFrame();
     void makeNewDirectory();
     void calculateAlpha();
@@ -75,6 +78,7 @@ public:
     void checkKeys();
     void calibrateBackground();
     void defineShaders();
+    void activateGnome();
     
     
     // openFrameworks methods

@@ -62,7 +62,7 @@ void gnome::loadGnomeSequence() {
     sequence.enableThreadedLoad(true);
 //    sequence.loadSequence(gnomeDir);
     string gnomePrefix = gnomeDir + "/gnome_";
-    sequence.loadSequence(gnomePrefix, "png", 0, numFrames, 3);
+    sequence.loadSequence(gnomePrefix, "png", 0, numFrames, 4);
     sequence.preloadAllFrames();	//this way there is no stutter when loading frames
     sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
 }

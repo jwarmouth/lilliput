@@ -26,42 +26,22 @@ typedef enum {
 class ofApp : public ofBaseApp{
 
 public:
-    RecordingState recordingState;
-    bool isRecording;
-    bool humanDetected;
-    bool isWaitingToRecord;
-    string gnomeDirectory;
-    string currentPath;
-    string fileName;
-    int frameCount;
-    int maxFramesPerGnome;
-    int minFramesPerGnome;
-    float recordingDelay;
-    float recordingTimer;
-//    ofFile saveLocation;
+    bool isRecording, humanDetected, isWaitingToRecord;
+    string gnomeDirectory, currentPath, fileName;
+    int frameCount, maxFramesPerGnome, minFramesPerGnome;
+    float recordingDelay, recordingTimer;
     
     ofxImageSequenceRecorder threadRecorder;
+    RecordingState recordingState;
     
     ofxMultiKinectV2 kinect0;
-    
-    ofTexture colorTex0;
-    ofTexture depthTex0;
-    ofTexture irTex0;
-    
     GpuRegistration gr;
     
-    ofShader depthShader;
-    ofShader irShader;
-    ofShader alphaShader;
-    ofFbo frameFbo;
+    ofTexture colorTex0, depthTex0, irTex0;
+    ofShader depthShader, irShader, alphaShader, shaderBlurX, shaderBlurY;
+    ofFbo frameFbo, depthFbo, fboBlurOnePass, fboBlurTwoPass;
     
-    bool process_occlusion;
-    bool draw_depth;
-    bool draw_registered;
-    bool draw_ir;
-    bool draw_video;
-    bool calibrate;
-
+    bool process_occlusion, draw_depth, draw_registered, draw_ir, draw_video, calibrate;
     
     //  Width & Height of Video
     int w, h, depthH, depthW, saveW, saveH;
@@ -81,13 +61,8 @@ public:
     int numGnomes;
     gnome gnomes[5];
 //    gnome theGnome;
-    
 //    vector <gnome> gnomes;
-    
-    //    Video Recorder
-//    ofPtr<ofQTKitGrabber> vidRecorder;
-//    void videoSaved(ofVideoSavedEventArgs& e);
-//    vector<string> videoDevices;
+
     
     // Jeffu methods
     void detectHuman();
@@ -106,22 +81,9 @@ public:
     void setup();
     void update();
     void draw();
-    
-    
     void keyPressed(int key);
     void keyReleased(int key);
-    
     void exit();
-    
-    //		void mouseMoved(int x, int y );
-    //		void mouseDragged(int x, int y, int button);
-    //		void mousePressed(int x, int y, int button);
-    //		void mouseReleased(int x, int y, int button);
-    //		void mouseEntered(int x, int y);
-    //		void mouseExited(int x, int y);
-    //		void windowResized(int w, int h);
-    //		void dragEvent(ofDragInfo dragInfo);
-    //		void gotMessage(ofMessage msg);
 		
 };
 
@@ -158,7 +120,70 @@ STRINGIFY(
           void main()
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
-              float value = col.r / 65535.0;
+//              float value = col.r / 65535.0;
+              float value = col.r / 1000.0;
               gl_FragColor = vec4(vec3(value), 1.0);
           }
           );
+
+
+/*
+static string blurFragmentShaderX =
+STRINGIFY(
+          uniform sampler2DRect tex;
+          uniform float blurAmount = 2.0;
+          in vec2 textCoordVarying;
+          out vec4 outputColor;
+          
+          void main()
+          {
+              vec4 color;
+              color += 1.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -4.0, 0.0));
+              color += 2.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -3.0, 0.0));
+              color += 3.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -2.0, 0.0));
+              color += 4.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -1.0, 0.0));
+              
+              color += 5.0 * texture(tex0, texCoordVarying + vec2(blurAmount, 0));
+              
+              color += 4.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 1.0, 0.0));
+              color += 3.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 2.0, 0.0));
+              color += 2.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 3.0, 0.0));
+              color += 1.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 4.0, 0.0));
+              
+              color /= 25.0;
+              
+              outputColor = color;
+              
+          }
+          );
+
+static string blurFragmentShaderY =
+STRINGIFY(
+          uniform sampler2DRect tex;
+          uniform float blurAmount;
+          in vec2 textCoordVarying;
+          out vec4 outputColor;
+          
+          void main()
+          {
+              vec4 color;
+              color += 1.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -4.0));
+              color += 2.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -3.0));
+              color += 3.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -2.0));
+              color += 4.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -1.0));
+              
+              color += 5.0 * texture(tex0, texCoordVarying + vec2(0, blurAmount));
+              
+              color += 4.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 1.0));
+              color += 3.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 2.0));
+              color += 2.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 3.0));
+              color += 1.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 4.0));
+              
+              color /= 25.0;
+              
+              outputColor = color;
+              
+          }
+          );
+
+*/

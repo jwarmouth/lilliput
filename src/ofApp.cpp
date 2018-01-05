@@ -44,7 +44,14 @@ void ofApp::setup(){
     recordingDelay = 0.5f;
     recordingTimer = 0.0f;
     calibrate = true;
-
+    
+    
+    // Allocate FBOs
+    fboBlurOnePass.allocate(saveW, saveH, GL_RGBA);
+    fboBlurTwoPass.allocate(saveW, saveH, GL_RGBA);
+    frameFbo.allocate(saveW, saveH, GL_RGBA);
+    depthFbo.allocate(saveW, saveH, GL_RGBA);
+    
     
     // Initialize Kinect
     kinect0.open(true, true, 0, 2);
@@ -70,21 +77,27 @@ void ofApp::update(){
     detectHuman();
     kinect0.update();
     if (kinect0.isFrameNew()){
+        
+    // Get Kinect Frame Data
         colorTex0.loadData(kinect0.getColorPixelsRef());
         depthTex0.loadData(kinect0.getDepthPixelsRef());
         
+    // Get Kinect IR data if needed
         if (draw_ir) {
             irTex0.loadData(kinect0.getIrPixelsRef());
         }
         
-//        if (calibrate) {
-//            calibrateBackground();
-//        }
+    // Calibrate Background -- if possible
+        if (calibrate) {
+            calibrateBackground();
+        }
         
+    // Set Depth Texture
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         
+    // Check recording if RECORDING
         if (recordingState == RECORDING) {
             checkRecording();
         }
@@ -94,6 +107,7 @@ void ofApp::update(){
             startRecording();
         }
 
+    // Update Gnomes
         // Loop through & Update Gnomes if active
         for (int i=0; i<numGnomes; i++) {
             if (gnomes[i].activeGnome) {
@@ -148,9 +162,14 @@ void ofApp::draw(){
             
             ofSetColor(255, 0, 0);
             ofDrawCircle(30, 50, 15);
+            
+            ofSetColor(255, 255, 255);
+//            ofRotate(-90);
+            ofDrawBitmapString(ofToString(frameCount), 30, 80);
         }
         
-        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect? NO, this will not work.
+        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect?
+        // NO, this will not work.
     }
     
     // Draw Frame Rate to screen
@@ -219,15 +238,35 @@ void ofApp::makeNewDirectory(){
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
     
-    // Draw the depth texture into a Frame Buffer Object
-    ofFbo depthFbo;
-    depthFbo.allocate(saveW, saveH, GL_RGBA);
+    // Draw Depth texture into a Frame Buffer Object
     depthFbo.begin();
-    ofClear(0, 0, 0, 0);    // clear fbo
+    ofClear(0, 0, 0, 0);
     depthShader.begin();
+    ofSetColor(ofColor::white);
     depthTex0.draw(0, 0, saveW, saveH);
+//    fboBlurTwoPass.draw(0, 0, saveW, saveH);   // draw blurred version instead
     depthShader.end();
     depthFbo.end();
+    
+    
+    // Blur Shader - Pass 1
+    fboBlurOnePass.begin();
+    ofClear(0, 0, 0, 0);
+    shaderBlurX.begin();
+    shaderBlurX.setUniform1f("blurAmnt", 2.0);
+    depthFbo.draw(0, 0, saveW, saveH);
+    shaderBlurX.end();
+    fboBlurOnePass.end();
+    
+    
+    // Blur Shader - Pass 2
+    fboBlurTwoPass.begin();
+    ofClear(0, 0, 0, 0);
+    shaderBlurY.begin();
+    shaderBlurY.setUniform1f("blurAmnt", 2.0);
+    fboBlurOnePass.draw(0, 0, saveW, saveH);
+    shaderBlurY.end();
+    fboBlurTwoPass.end();
     
     // Draw the Registered video texture into a Frame Buffer Object
     //    ofFbo fbo;
@@ -245,11 +284,11 @@ void ofApp::saveFrame(){
     
     
     // Draw Registered Texture into new FBO using Depth as alpha shader
-    frameFbo.allocate(saveW, saveH, GL_RGBA);
     frameFbo.begin();
     ofClear(0, 0, 0, 0);
     alphaShader.begin();    // pass depth fbo to the alpha shader
-    alphaShader.setUniformTexture("maskTex", depthFbo.getTexture(), 1 );
+//    alphaShader.setUniformTexture("maskTex", depthFbo.getTexture(), 1 );
+    alphaShader.setUniformTexture("maskTex", fboBlurTwoPass.getTexture(), 1 );
     gr.getRegisteredTexture(process_occlusion).draw(0, 0, saveW, saveH);
     alphaShader.end();
     frameFbo.end();
@@ -259,10 +298,11 @@ void ofApp::saveFrame(){
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
     threadRecorder.addFrame(pix);
+    
+    //  IT WORKS!!! Saves .png sequence with alpha channel
     //    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
     //    ofSaveImage(pix, fileName, OF_IMAGE_QUALITY_BEST);
     
-    //  IT WORKS!!! Saves .png sequence with alpha channel
     //  how to draw into fbo and save fbo to png file....
     //  https://forum.openframeworks.cc/t/convert-int-to-char/1632/7
     //  https://forum.openframeworks.cc/t/saving-frames-with-transparent-background/26363/7
@@ -287,36 +327,10 @@ void ofApp::stopRecording(){
     recordingState = PAUSED;
     threadRecorder.addFrame();  // add a blank frame to trigger closeFolder
     
+    // Folder closing is now called on threadRecorder
+    // addFrame() with no image will allocate a 1x1 px black image
     
-    
-//    threadRecorder.waitForThread();
-    
-    
-    // Folder closing is now on threadRecorder
-    // as it is prematurely clamping the folder before anything is added
-    // SO, either set it in a single thread that can detect when the folder changes
-    // OR initiate a new thread for each Gnome clip - maybe 5 that can be cycled through?
-    
-    // TELL THE THREAD TO DO THIS - IN QUEUE
-    // SEND IT A BLACK IMAGE?
-    // ALLOW IT TO KNOW THE CURRENT PATH
-    
-//    // Set current recording path
-//    ofDirectory dir(currentPath);
-//    dir.listDir();
-//    int size = dir.size();
-//    
-//    if (size < minFramesPerGnome) {
-//        // Delete directory if fewer than 3 seconds / 90 frames
-//        dir.remove(true);
-//    } else {
-//        // Clean up the last 15 frames - they will be garbage
-//        for (int i = size - 15; i < size; i++) {
-//            dir.getFile(i).remove();
-//        }
-//    }
-    
-    // fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";
+    //    threadRecorder.waitForThread();
 }
 
 
@@ -325,13 +339,19 @@ void ofApp::defineShaders(){
     
     // Define Shaders - thanks to Yuya Hanai
     #ifdef TARGET_OPENGLES
-        alphaShader.load("shadersES2/shader");
+    alphaShader.load("shadersES2/shader");
+    shaderBlurX.load("shadersES2/shaderBlurX");
+    shaderBlurY.load("shadersES2/shaderBlurY");
     
     #else
         if(ofIsGLProgrammableRenderer()){
             alphaShader.load("shadersGL3/shader");
+            shaderBlurX.load("shadersGL3/shaderBlurX");
+            shaderBlurY.load("shadersGL3/shaderBlurY");
         }else{
             alphaShader.load("shadersGL2/shader");
+            shaderBlurX.load("shadersGL2/shaderBlurX");
+            shaderBlurY.load("shadersGL2/shaderBlurY");
         }
     #endif
     
@@ -340,6 +360,11 @@ void ofApp::defineShaders(){
     
     irShader.setupShaderFromSource(GL_FRAGMENT_SHADER, irFragmentShader);
     irShader.linkProgram();
+    
+    
+    fboBlurOnePass.allocate(depthW, depthH);
+    fboBlurTwoPass.allocate(depthW, depthH);
+    
 }
 
 

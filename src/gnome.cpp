@@ -6,65 +6,73 @@
 //
 //  gnome.cpp
 //  Lilliput
-//
-//  Created by Jeffrey Warmouth on 12/9/17.
-//
-//
 
 #include "gnome.h"
 
-//--------------------------------------------------------------
 
+
+//--------------------------------------------------------------
 void gnome::setup() {
     
-    activeGnome = true;
-    
-    terminalVelocity = 20;
-    vidWidth = 640;
-    vidHeight = 480;
     w = 256;
     h = 212;
+    vidWidth = 1920;
+    vidHeight = 1080;
+    speed = 5.0;
     
     gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
-//    sequence.loadSequence("frame", "png", 1, 11, 2);
+    sequence.enableThreadedLoad(true);
+    sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
+
+}
+
+
+//--------------------------------------------------------------
+void gnome::reset() {
     
+    activeGnome = true;
+    counter = 0;
+    dx = 0;
     loadGnomeSequence();
     setRandomPosition();
-    
 }
+
 
 //--------------------------------------------------------------
 void gnome::update() {
     
-    calculateGravity();
+    if (counter > sequence.getCurrentFrame()) {
+        activeGnome = false;
+    } else {
+        counter = sequence.getCurrentFrame();
+    }
+    
+    fall();
     
 }
+
 
 //--------------------------------------------------------------
 void gnome::draw() {
     
     //get the frame based on the current time and draw it
-    sequence.getFrameForTime(ofGetElapsedTimef())->draw(x,y, w, h);
+    sequence.getTextureForTime(ofGetElapsedTimef()).draw(x, y, w, h);
     
-    ofDrawBitmapStringHighlight( ofToString(numFrames), x, y);
-//    ofDrawBitmapStringHighlight(ofToString(ofGetElapsedTimef()), x, y);
-    
-    
-//    vid.draw(x*2, y*2, w*2, h*2);
+    // Draw # of frames of this Gnome
+    ofDrawBitmapStringHighlight(ofToString(sequence.getCurrentFrame()), x, y);
 }
+
 
 //--------------------------------------------------------------
 void gnome::loadGnomeSequence() {
     gnomeDir = chooseRandomGnome();
     ofDirectory g(gnomeDir);
     g.listDir();
-    numFrames = g.size();
-    sequence.enableThreadedLoad(true);
-//    sequence.loadSequence(gnomeDir);
+    numFrames = g.size() - 1;
     string gnomePrefix = gnomeDir + "/gnome_";
     sequence.loadSequence(gnomePrefix, "png", 0, numFrames, 4);
+//    sequence.loadSequence(gnomeDir);
     sequence.preloadAllFrames();	//this way there is no stutter when loading frames
-    sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
 }
 
 
@@ -74,31 +82,52 @@ string gnome::chooseRandomGnome() {
     ofDirectory dir(gnomesDirectory);
     dir.listDir();
     return dir.getPath(floor(ofRandom(dir.size())));
-    
-//    sequence.loadSequence(dir.getPath(floor(ofRandom(dir.size()))));
-//    vid.load(dir.getPath(floor(ofRandom(dir.size()))));
-//    vid.setLoopState(OF_LOOP_NONE);
-//    vid.play();
 }
+
 
 //--------------------------------------------------------------
 void gnome::setRandomPosition() {
-    // Remember that x=y and y=x
-    // Should probably do a translator for that in the movement or draw script
     
-    //    y = -h;
-    //    x = ofRandom(140, 500);
-    
-    // This SHOULD be the starting position:
-//    x = -w;
-    
-    x = 200;
+    x = -w;
     y = ofRandom(h/2, 1080-(h/2));
-    speed = 0;
     
     // 50% chance to flip horixontally
-    // OH - we actually need to use h, since everything is tilted sideways!
-    //    if (ofRandom(2)>1) { w *= -1;}
+//    if (ofRandom(2)>1) {
+//        h *= -1;
+//    }
+    
+    // Remember that x&y are flipped, since Kinect & screen are tilted sideways!
+    // Should probably do a translator for that in the movement or draw script
+}
+
+
+//--------------------------------------------------------------
+void gnome::fall() {
+    
+    if (x < vidWidth - w * 2) {
+        dx += speed;
+        x += dx;
+    }
+    
+    
+    //  If gnome falls to bottom, Reset Gnome
+//    if (x > vidWidth - h) {
+//        activeGnome = false;
+//    }
+    
+    
+    //    //  Fall Down
+    //    if (speed <= terminalVelocity) {
+    //        speed ++;
+    //    }
+    //
+    //    y += speed;
+    //
+    //    //  If gnome falls to bottom, Reset Gnome
+    //    if (y > vidWidth - h) {
+    //        setup();
+    //    }
+    
 }
 
 
@@ -127,20 +156,5 @@ void gnome::calculateGravity() {
 }
 
 
-//--------------------------------------------------------------
-void gnome::fall() {
-    
-    //  Fall Down
-    if (speed <= terminalVelocity) {
-        speed ++;
-    }
-    
-    y += speed;
-    
-    //  If gnome falls to bottom, Reset Gnome
-    if (y > vidWidth - h) {
-        setup();
-    }
-    
-}
+
 

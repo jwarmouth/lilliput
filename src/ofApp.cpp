@@ -38,7 +38,7 @@ void ofApp::setup(){
     ofEnableSmoothing();
     ofSetVerticalSync(true);
     process_occlusion = false;
-    draw_video = true;
+//    draw_video = true;
     maxFramesPerGnome = 900;
     minFramesPerGnome = 90;
     recordingDelay = 0.5f;
@@ -102,7 +102,7 @@ void ofApp::update(){
             checkRecording();
         }
         
-        // Wait 1 second before beginning to record Gnome
+    // Wait 1 second before beginning to record Gnome
         else if (recordingState == WAITING && ofGetElapsedTimef() > recordingTimer) {
             startRecording();
         }
@@ -133,6 +133,7 @@ void ofApp::draw(){
             depthShader.begin();
             depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
             depthShader.end();
+//            fboBlurTwoPass.draw(210,0,depthW, depthH);
         }
         
     // Draw IR
@@ -168,13 +169,10 @@ void ofApp::draw(){
             ofDrawBitmapString(ofToString(frameCount), 30, 80);
         }
         
-        // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect?
-        // NO, this will not work.
-    }
-    
     // Draw Frame Rate to screen
         ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
-    
+        
+    }
 
 }
 
@@ -253,8 +251,8 @@ void ofApp::saveFrame(){
     fboBlurOnePass.begin();
     ofClear(0, 0, 0, 0);
     shaderBlurX.begin();
-    shaderBlurX.setUniform1f("blurAmnt", 2.0);
-    depthFbo.draw(0, 0, saveW, saveH);
+    shaderBlurX.setUniform1f("blurAmnt", 1.0);
+    depthFbo .draw(0, 0, saveW, saveH);
     shaderBlurX.end();
     fboBlurOnePass.end();
     
@@ -263,7 +261,7 @@ void ofApp::saveFrame(){
     fboBlurTwoPass.begin();
     ofClear(0, 0, 0, 0);
     shaderBlurY.begin();
-    shaderBlurY.setUniform1f("blurAmnt", 2.0);
+    shaderBlurY.setUniform1f("blurAmnt", 1.0);
     fboBlurOnePass.draw(0, 0, saveW, saveH);
     shaderBlurY.end();
     fboBlurTwoPass.end();
@@ -307,6 +305,9 @@ void ofApp::saveFrame(){
     //  https://forum.openframeworks.cc/t/convert-int-to-char/1632/7
     //  https://forum.openframeworks.cc/t/saving-frames-with-transparent-background/26363/7
     //  http://openframeworks.cc/documentation/gl/ofFbo/
+    
+    // Try to simply use depthTex0 as an alpha for colorTex0. Like... draw it onto a 1920x1080 rect?
+    // NO, this will not work.
 }
 
 
@@ -397,10 +398,6 @@ void ofApp::keyPressed(int key){
         process_occlusion = !process_occlusion;
     }
     
-    if (key == 'v') {
-        draw_video = !draw_video;
-    }
-    
     if (key == 'i') {
         draw_ir = !draw_ir;
     }
@@ -408,6 +405,31 @@ void ofApp::keyPressed(int key){
     if (key == 'c') {
         calibrate = true;
     }
+    
+    if (key == '0') {
+        gnomes[0].reset();
+    }
+    
+    if (key == '1') {
+        gnomes[1].reset();
+    }
+    
+    if (key == '2') {
+        gnomes[2].reset();
+    }
+    
+    if (key == '3') {
+        gnomes[3].reset();
+    }
+    
+    if (key == '4') {
+        gnomes[4].reset();
+    }
+    
+//    if (key == 'v') {
+//        draw_video = !draw_video;
+//    }
+    
 }
 
 

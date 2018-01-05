@@ -31,31 +31,23 @@ public:
     void draw();
     void fall();
     string chooseRandomGnome();
-    void gravity();
     void loadGnomeSequence();
     void setRandomPosition();
     void calculateGravity();
     
     // Properties
-    float x;
-    float y;
-    int w;
-    int h;
-    float speed;
-    string gnomesDirectory;
-    string gnomeDir;
-    int numFrames;
-    ofxImageSequence sequence;
+    float x, y, dx, dy, vidWidth, vidHeight, speed;
+    int w, h, numFrames, counter;
     bool activeGnome;
+    string gnomesDirectory, gnomeDir;
+    ofxImageSequence sequence;
     
 //    ofVideoPlayer vid;
 //    bool playing;
     
     // References to "Global" Properties
-    int vidWidth;
-    int vidHeight;
-    float terminalVelocity;
-    ofPixels pix;
+//    float terminalVelocity;
+//    ofPixels pix;
     
 //    ball(); // constructor
 //    http://openframeworks.cc/ofBook/chapters/OOPs!.html 

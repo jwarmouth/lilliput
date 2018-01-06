@@ -29,7 +29,7 @@ class ofApp : public ofBaseApp{
 public:
     bool isRecording, humanDetected, isWaitingToRecord;
     string gnomeDirectory, currentPath, fileName;
-    int frameCount, maxFramesPerGnome, minFramesPerGnome;
+    int frameCount, maxFramesPerGnome, minFramesPerGnome, threshold;
     float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer;
     
     ofxImageSequenceRecorder threadRecorder;
@@ -38,11 +38,18 @@ public:
     ofxMultiKinectV2 kinect0;
     GpuRegistration gr;
     
+    // Background Learning for contours
+    ofxCvColorImage	colorImg;
+    ofxCvGrayscaleImage grayImage, grayBg, grayDiff;
+    ofxCvContourFinder contourFinder;
+    
+    
     ofTexture colorTex0, depthTex0, irTex0;
     ofShader depthShader, irShader, alphaShader, shaderBlurX, shaderBlurY;
-    ofFbo frameFbo, depthFbo, fboBlurOnePass, fboBlurTwoPass;
+    ofFbo frameFbo, depthFbo, irFbo, fboBlurOnePass, fboBlurTwoPass;
     
-    bool process_occlusion, draw_depth, draw_registered, draw_ir, draw_video, calibrate;
+    bool process_occlusion, calibrate;
+    bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray;
     
     //  Width & Height of Video
     int w, h, depthH, depthW, saveW, saveH;
@@ -73,6 +80,7 @@ public:
     void waitToStopRecording();
     void saveFrame();
     void makeNewDirectory();
+    void blurDepth();
     void calculateAlpha();
     void checkRecording();
     void checkKeys();
@@ -125,69 +133,8 @@ STRINGIFY(
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
 //              float value = col.r / 65535.0;
-              float value = col.r / 1000.0;
+              float value = col.r / 2400.0;
               gl_FragColor = vec4(vec3(value), 1.0);
           }
           );
 
-
-/*
-static string blurFragmentShaderX =
-STRINGIFY(
-          uniform sampler2DRect tex;
-          uniform float blurAmount = 2.0;
-          in vec2 textCoordVarying;
-          out vec4 outputColor;
-          
-          void main()
-          {
-              vec4 color;
-              color += 1.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -4.0, 0.0));
-              color += 2.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -3.0, 0.0));
-              color += 3.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -2.0, 0.0));
-              color += 4.0 * texture(tex0, texCoordVarying + vec2(blurAmount * -1.0, 0.0));
-              
-              color += 5.0 * texture(tex0, texCoordVarying + vec2(blurAmount, 0));
-              
-              color += 4.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 1.0, 0.0));
-              color += 3.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 2.0, 0.0));
-              color += 2.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 3.0, 0.0));
-              color += 1.0 * texture(tex0, texCoordVarying + vec2(blurAmount * 4.0, 0.0));
-              
-              color /= 25.0;
-              
-              outputColor = color;
-              
-          }
-          );
-
-static string blurFragmentShaderY =
-STRINGIFY(
-          uniform sampler2DRect tex;
-          uniform float blurAmount;
-          in vec2 textCoordVarying;
-          out vec4 outputColor;
-          
-          void main()
-          {
-              vec4 color;
-              color += 1.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -4.0));
-              color += 2.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -3.0));
-              color += 3.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -2.0));
-              color += 4.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * -1.0));
-              
-              color += 5.0 * texture(tex0, texCoordVarying + vec2(0, blurAmount));
-              
-              color += 4.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 1.0));
-              color += 3.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 2.0));
-              color += 2.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 3.0));
-              color += 1.0 * texture(tex0, texCoordVarying + vec2(0.0, blurAmount * 4.0));
-              
-              color /= 25.0;
-              
-              outputColor = color;
-              
-          }
-          );
-
-*/

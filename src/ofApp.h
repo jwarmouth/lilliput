@@ -2,7 +2,7 @@
 //        / /__  / __/ __/_  __
 //   __  / / _ \/ /_/ /_/ / / /
 //  / /_/ /  __/ __/ __/ /_/ /
-//  \____/\___/_/ /_/  \__,_/   LILLIPUT ©2017     */
+//  \____/\___/_/ /_/  \__,_/   LILLIPUT ï¿½2017     */
 
 //  ofApp.h
 //  Lilliput
@@ -12,15 +12,11 @@
 #include "ofMain.h"
 #include "ofxMultiKinectV2.h"
 #include "ofxOpenCv.h"
-<<<<<<< HEAD
-//#include "ofxVideoRecorder.h"
-//#include "gnome.h"
-=======
-#include "ofxVideoRecorder.h"
 #include "gnome.h"
 >>>>>>> fixKinectAgain
 #include "GpuRegistration.h"
 #include "ofxImageSequence.h"
+#include "ofxImageSequenceRecorder.h"
 
 <<<<<<< HEAD
 class ofApp : public ofBaseApp{
@@ -29,60 +25,37 @@ class ofApp : public ofBaseApp{
 typedef enum {
     PAUSED,
     WAITING,
-    RECORDING
+    RECORDING,
+    WAITING_TO_STOP
 } RecordingState;
 
 class ofApp : public ofBaseApp{
 
 >>>>>>> fixKinectAgain
 public:
+    bool isRecording, humanDetected, isWaitingToRecord;
+    string gnomeDirectory, currentPath, fileName;
+    int frameCount, maxFramesPerGnome, minFramesPerGnome, threshold;
+    float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer;
+    
+    ofxImageSequenceRecorder threadRecorder;
     RecordingState recordingState;
-    bool isRecording;
-    bool humanDetected;
-    bool isWaitingToRecord;
-    string gnomeDirectory;
-    string currentPath;
-    string fileName;
-    int frameCount;
-    int maxFramesPerGnome;
-    float recordingDelay;
-    float recordingTimer;
-//    ofFile saveLocation;
     
     ofxMultiKinectV2 kinect0;
-<<<<<<< HEAD
-    ofTexture colorTex0;
-    ofTexture depthTex0;
-//    ofTexture testTex0;
-    
-    GpuRegistration gr;
-    ofFbo frameFbo;
-    
-    ofShader depthShader;
-=======
-    
-    ofTexture colorTex0;
-    ofTexture depthTex0;
-    ofTexture irTex0;
-    
     GpuRegistration gr;
     
-    ofShader depthShader;
-    ofShader irShader;
->>>>>>> fixKinectAgain
-    ofShader alphaShader;
-    ofFbo frameFbo;
+    // Background Learning for contours
+    ofxCvColorImage	colorImg;
+    ofxCvGrayscaleImage grayImage, grayBg, grayDiff;
+    ofxCvContourFinder contourFinder;
     
-    bool process_occlusion;
-    bool draw_depth;
-    bool draw_registered;
-    bool draw_ir;
-    bool draw_video;
-<<<<<<< HEAD
-=======
-    bool calibrate;
-
->>>>>>> fixKinectAgain
+    
+    ofTexture colorTex0, depthTex0, irTex0;
+    ofShader depthShader, irShader, alphaShader, shaderBlurX, shaderBlurY;
+    ofFbo frameFbo, depthFbo, irFbo, fboBlurOnePass, fboBlurTwoPass;
+    
+    bool process_occlusion, calibrate;
+    bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray;
     
     //  Width & Height of Video
     int w, h, depthH, depthW, saveW, saveH;
@@ -102,39 +75,32 @@ public:
     int numGnomes;
     gnome gnomes[5];
 //    gnome theGnome;
-    
 //    vector <gnome> gnomes;
-    
+
     
     // Jeffu methods
     void detectHuman();
     void startRecording();
     void stopRecording();
+    void waitToStartRecording();
+    void waitToStopRecording();
     void saveFrame();
     void makeNewDirectory();
+    void blurDepth();
     void calculateAlpha();
     void checkRecording();
     void checkKeys();
     void calibrateBackground();
     void defineShaders();
+    void activateGnome();
     
     // openFrameworks methods
     void setup();
     void update();
     void draw();
-    
     void keyPressed(int key);
     void keyReleased(int key);
-    
-    //		void mouseMoved(int x, int y );
-    //		void mouseDragged(int x, int y, int button);
-    //		void mousePressed(int x, int y, int button);
-    //		void mouseReleased(int x, int y, int button);
-    //		void mouseEntered(int x, int y);
-    //		void mouseExited(int x, int y);
-    //		void windowResized(int w, int h);
-    //		void dragEvent(ofDragInfo dragInfo);
-    //		void gotMessage(ofMessage msg);
+    void exit();
 		
 };
 
@@ -171,7 +137,9 @@ STRINGIFY(
           void main()
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
-              float value = col.r / 65535.0;
+//              float value = col.r / 65535.0;
+              float value = col.r / 2400.0;
               gl_FragColor = vec4(vec3(value), 1.0);
           }
           );
+

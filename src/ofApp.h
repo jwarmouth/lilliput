@@ -49,7 +49,7 @@ public:
     ofFbo frameFbo, depthFbo, irFbo, fboBlurOnePass, fboBlurTwoPass;
     
     bool process_occlusion, calibrate;
-    bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray;
+    bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray, draw_contours;
     
     //  Width & Height of Video
     int w, h, depthH, depthW, saveW, saveH;

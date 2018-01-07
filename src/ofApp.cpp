@@ -48,6 +48,7 @@ void ofApp::setup(){
     humanDetected = false;
     process_occlusion = false;
     calibrate = true;
+//    draw_gray = true;
     
     // Allocate FBOs
     fboBlurOnePass.allocate(saveW, saveH, GL_RGBA);
@@ -57,15 +58,11 @@ void ofApp::setup(){
     irFbo.allocate(w, h, GL_RGB);
     
     // Allocate CV Images
-//    colorImg.allocate(depthW, depthH);
-//    grayImage.allocate(depthW, depthH);
-//    grayBg.allocate(depthW, depthH);
-//    grayDiff.allocate(depthW, depthH);
     colorImg.allocate(w, h);
     grayImage.allocate(w, h);
     grayBg.allocate(w, h);
     grayDiff.allocate(w, h);
-    threshold = 80;
+    threshold = 70;
     
     // Initialize Kinect
     kinect0.open(true, true, 0, 2);
@@ -100,7 +97,6 @@ void ofApp::update(){
         depthTex0.loadData(kinect0.getDepthPixelsRef());    // Get Kinect Depth data
         irTex0.loadData(kinect0.getIrPixelsRef());          // Get Kinect IR data if needed
 
-        
     // Set Depth Texture
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // GL_NEAREST or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
@@ -134,7 +130,6 @@ void ofApp::update(){
         // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
         // also, find holes is set to true so we will get interior contours as well....
         contourFinder.findContours(grayDiff, 100, (w*h)/3, 5, false, true);	// find holes
-        
         
     // Check Recording
         checkRecording();
@@ -195,25 +190,23 @@ void ofApp::draw(){
         }
         
     // Draw Contours
-        ofSetHexColor(0xffffff);
-        contourFinder.draw(0, 0, w, h); // Draw the whole contour finder
+        if (draw_contours) {
+            ofSetHexColor(0xffffff);
+            contourFinder.draw(0, 0, w, h); // Draw the whole contour finder
         
-        // or, instead we can draw each blob individually from the blobs vector,
-        // this is how to get access to them:
-        /*
-        for (int i = 0; i < contourFinder.nBlobs; i++){
-            contourFinder.blobs[i].draw(210, 0);
-            
-            // draw over the centroid if the blob is a hole
-            ofSetColor(255);
-            if(contourFinder.blobs[i].hole){
-                ofDrawBitmapString("hole",
-                                   contourFinder.blobs[i].boundingRect.getCenter().x + 210,
-                                   contourFinder.blobs[i].boundingRect.getCenter().y + 0);
-            }
+        // or draw each blob individually from the blobs vector,
+//        for (int i = 0; i < contourFinder.nBlobs; i++){
+//            contourFinder.blobs[i].draw(210, 0);
+//            
+//            // draw over the centroid if the blob is a hole
+//            ofSetColor(255);
+//            if(contourFinder.blobs[i].hole){
+//                ofDrawBitmapString("hole",
+//                                   contourFinder.blobs[i].boundingRect.getCenter().x + 210,
+//                                   contourFinder.blobs[i].boundingRect.getCenter().y + 0);
+//            }
+//        }
         }
-         */
-
         
     // Loop through & Draw Gnomes
         for (int i=0; i<numGnomes; i++) {
@@ -223,10 +216,10 @@ void ofApp::draw(){
         }
         
     // Draw Graph
-        for (int i = 0; i < w; i += 100) {
-            ofDrawBitmapStringHighlight(ofToString(i), i, 20);
-            ofDrawBitmapStringHighlight(ofToString(i), i, h - 20);
-        }
+//        for (int i = 0; i < w; i += 100) {
+//            ofDrawBitmapStringHighlight(ofToString(i), i, 20);
+//            ofDrawBitmapStringHighlight(ofToString(i), i, h - 20);
+//        }
         
     // Draw Recording Icon
         if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
@@ -237,7 +230,6 @@ void ofApp::draw(){
             ofDrawCircle(30, 50, 15);
             
             ofSetColor(255, 255, 255);
-//            ofRotate(-90);
             ofDrawBitmapString(ofToString(frameCount), 30, 80);
         }
         
@@ -595,10 +587,6 @@ void ofApp::keyPressed(int key){
         draw_gray = !draw_gray;
     }
     
-    if (key == 'c') {
-        calibrate = true;
-    }
-    
     if (key == 'o') {
         process_occlusion = !process_occlusion;
     }
@@ -607,8 +595,12 @@ void ofApp::keyPressed(int key){
         draw_ir = !draw_ir;
     }
     
-    if (key == 'c') {
+    if (key == 'x') {
         calibrate = true;
+    }
+    
+    if (key == 'c') {
+        draw_contours = !draw_contours;
     }
     
     if (key == '0') {

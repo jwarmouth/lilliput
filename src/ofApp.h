@@ -135,7 +135,7 @@ STRINGIFY(
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
 //              float value = col.r / 65535.0;
-              float value = col.r / 2400.0;
+              float value = col.r / 2000.0;
               gl_FragColor = vec4(vec3(value), 1.0);
           }
           );

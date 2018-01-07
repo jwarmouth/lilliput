@@ -102,7 +102,7 @@ void ofApp::update(){
 
         
     // Set Depth Texture
-        depthTex0.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR); // or GL_LINEAR
+        depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // GL_NEAREST or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
         // any chance we can feather the edge and get rid of single outlier pixels?
         blurDepth();
@@ -133,7 +133,7 @@ void ofApp::update(){
         
         // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
         // also, find holes is set to true so we will get interior contours as well....
-        contourFinder.findContours(grayDiff, 20, (depthW*depthH)/3, 10, true);	// find holes
+        contourFinder.findContours(grayDiff, 100, (w*h)/3, 5, false, true);	// find holes
         
         
     // Check Recording
@@ -243,7 +243,19 @@ void ofApp::draw(){
         
     // Draw Frame Rate to screen
         ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
+        
+        
+    // Draw Report to screen
+//        ofPushMatrix();
+//        ofSetColor(100,100,100,128);
+//        ofTranslate(0, h);
+//        ofRotateZ(-90);
+//        ofDrawRectangle(0, 0, h, 160);
+//        
+//        ofDrawBitmapString( ("Frame Rate: " + ofToString(ofGetFrameRate())) , 10, 20);
+//        ofPopMatrix();
     }
+    
 }
 
 
@@ -356,6 +368,11 @@ void ofApp::makeNewDirectory(){
 
 //--------------------------------------------------------------
 void ofApp::blurDepth(){
+    
+    
+    fboBlurOnePass.allocate(saveW, saveH);
+    fboBlurTwoPass.allocate(saveW, saveH);
+    
     // Draw Depth texture into a Frame Buffer Object
     depthFbo.begin();
     ofClear(0, 0, 0, 0);

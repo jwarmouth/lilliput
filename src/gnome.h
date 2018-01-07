@@ -37,7 +37,7 @@ public:
     
     // Properties
     float x, y, dx, dy, vidWidth, vidHeight, speed;
-    int w, h, numFrames, counter;
+    int w, h, numFrames, counter, flipped;
     bool activeGnome;
     string gnomesDirectory, gnomeDir;
     ofxImageSequence sequence;

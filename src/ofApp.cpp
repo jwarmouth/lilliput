@@ -13,59 +13,66 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+    // Application Settings
+    ofSetFrameRate(30);
+    ofEnableAlphaBlending();
+    ofEnableSmoothing();
+    ofSetVerticalSync(true);
     
+    // Define Shaders
     defineShaders();
     
-    recordingState = PAUSED;
-    humanDetected = false;
+    // Gnome Directory - Would like to read this from a .txt file - even better, to pick a folder.
     gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
-    // Would like to read this from a .txt file - even better, to pick a folder.
     
-    
+    // Dimensions
     w = 1920;
     h = 1080;
     depthW = 1500;
     depthH = 1080;
     saveW = 1024; //256 / 512 / 1024;
     saveH = 848; //212 / 424 / 848;
+    offset = 240;
+    // depthDraw = vec4 (offset, 0, depthW, depthH);
     
+    // Intervals
     screenRotation = 90;
-    ofSetFrameRate(30);
-    ofEnableAlphaBlending();
-    ofEnableSmoothing();
-    ofSetVerticalSync(true);
-    process_occlusion = false;
-//    draw_video = true;
     maxFramesPerGnome = 900;
     minFramesPerGnome = 90;
     recordingDelay = 0.5;
-    recordingTimer = 0.0;
-    gnomeInterval = 3.0;
-    gnomeTimer = 0.0;
-    calibrate = true;
+    gnomeInterval = 3.0;    // Base interval for spawning new Gnomes while recording
+    gravity = 300.0;
     
+    // States & Bools
+    recordingState = PAUSED;
+    humanDetected = false;
+    process_occlusion = false;
+    calibrate = true;
     
     // Allocate FBOs
     fboBlurOnePass.allocate(saveW, saveH, GL_RGBA);
     fboBlurTwoPass.allocate(saveW, saveH, GL_RGBA);
     frameFbo.allocate(saveW, saveH, GL_RGBA);
     depthFbo.allocate(saveW, saveH, GL_RGBA);
-    irFbo.allocate(depthW, depthH, GL_RGB);
+    irFbo.allocate(w, h, GL_RGB);
     
     // Allocate CV Images
-    colorImg.allocate(depthW, depthH);
-    grayImage.allocate(depthW, depthH);
-    grayBg.allocate(depthW, depthH);
-    grayDiff.allocate(depthW, depthH);
+//    colorImg.allocate(depthW, depthH);
+//    grayImage.allocate(depthW, depthH);
+//    grayBg.allocate(depthW, depthH);
+//    grayDiff.allocate(depthW, depthH);
+    colorImg.allocate(w, h);
+    grayImage.allocate(w, h);
+    grayBg.allocate(w, h);
+    grayDiff.allocate(w, h);
     threshold = 80;
-    
     
     // Initialize Kinect
     kinect0.open(true, true, 0, 2);
     kinect0.start();
     gr.setup(kinect0.getProtonect(), 2);
     
-    // Set threadRecorder defaults
+    // Thread Recorder Defaults
     threadRecorder.setPrefix("/gnome_");
     threadRecorder.setFormat("png");
     
@@ -104,7 +111,7 @@ void ofApp::update(){
         irFbo.begin();
         ofClear(0, 0, 0, 0);
         irShader.begin();
-        irTex0.draw(0,0, depthW, depthH);
+        irTex0.draw(offset,-75, depthW, depthH+150);
         irShader.end();
         irFbo.end();
     
@@ -139,6 +146,9 @@ void ofApp::update(){
                 gnomes[i].update();
             }
         }
+        
+    // Physics Calculations for Gnomes
+        calculatePhysics();
     }
 }
 
@@ -156,35 +166,37 @@ void ofApp::draw(){
     // Draw Depth
         if (draw_depth) {
             depthShader.begin();
-            depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+            depthTex0.draw(offset, 0, depthW, depthH);
+            // depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
             depthShader.end();
         }
         
     // Draw Blurred Depth
         if (draw_blur) {
-            fboBlurTwoPass.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-//            fboBlurTwoPass.draw(210,0,depthW, depthH);
+            fboBlurTwoPass.draw(offset, 0, depthW, depthH);
+            //fboBlurTwoPass.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
         }
         
     // Draw IR
         if (draw_ir) {
-            irFbo.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+            irFbo.draw(0, 0, w, h);
+            // irFbo.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
         }
         
     // Draw Registered
         if (draw_registered) {
-            gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-            // gr.getRegisteredTexture(process_occlusion).draw(0, 0, w, h);
+            gr.getRegisteredTexture(process_occlusion).draw(offset, 0, depthW, depthH);
+            //gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
         }
         
     // Draw Gray CV Image
         if (draw_gray) {
-            grayDiff.draw(210, 0, depthW, depthH);
+            grayDiff.draw(0, 0, w, h);
         }
         
     // Draw Contours
         ofSetHexColor(0xffffff);
-        contourFinder.draw(210, 0); // Draw the whole contour finder
+        contourFinder.draw(0, 0, w, h); // Draw the whole contour finder
         
         // or, instead we can draw each blob individually from the blobs vector,
         // this is how to get access to them:
@@ -210,6 +222,12 @@ void ofApp::draw(){
             }
         }
         
+    // Draw Graph
+        for (int i = 0; i < w; i += 100) {
+            ofDrawBitmapStringHighlight(ofToString(i), i, 20);
+            ofDrawBitmapStringHighlight(ofToString(i), i, h - 20);
+        }
+        
     // Draw Recording Icon
         if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
             // Draw Recorded frame
@@ -225,15 +243,12 @@ void ofApp::draw(){
         
     // Draw Frame Rate to screen
         ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
-        
     }
-
 }
 
 
 //--------------------------------------------------------------
 void ofApp::checkRecording(){
-    
     if (recordingState == PAUSED) {
         return;
     }
@@ -265,7 +280,6 @@ void ofApp::checkRecording(){
 
 //--------------------------------------------------------------
 void ofApp::detectHuman(){
-    
     if (humanDetected) {
         if (recordingState == PAUSED) {
             waitToStartRecording();
@@ -286,24 +300,19 @@ void ofApp::detectHuman(){
 
 //--------------------------------------------------------------
 void ofApp::waitToStartRecording(){
-    
     recordingState = WAITING;
     recordingTimer = ofGetElapsedTimef() + recordingDelay;
-
 }
 
 //--------------------------------------------------------------
 void ofApp::waitToStopRecording(){
-    
     recordingState = WAITING_TO_STOP;
     recordingTimer = ofGetElapsedTimef() + recordingDelay;
-    
 }
 
 
 //--------------------------------------------------------------
 void ofApp::startRecording(){
-    
     recordingState = RECORDING;
     frameCount = 0;
     makeNewDirectory();
@@ -312,8 +321,7 @@ void ofApp::startRecording(){
 
 
 //--------------------------------------------------------------
-void ofApp::activateGnome(){
-
+void ofApp::activateGnome() {
     for (int i=0; i<numGnomes; i++) {
         if (!gnomes[i].activeGnome) {
             gnomes[i].reset();
@@ -348,7 +356,6 @@ void ofApp::makeNewDirectory(){
 
 //--------------------------------------------------------------
 void ofApp::blurDepth(){
-    
     // Draw Depth texture into a Frame Buffer Object
     depthFbo.begin();
     ofClear(0, 0, 0, 0);
@@ -378,13 +385,11 @@ void ofApp::blurDepth(){
     fboBlurOnePass.draw(0, 0, saveW, saveH);
     shaderBlurY.end();
     fboBlurTwoPass.end();
-    
 }
 
 
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
-    
     // Draw the Registered video texture into a Frame Buffer Object
     //    ofFbo fbo;
     //    fbo.allocate(saveW, saveH, GL_RGBA);
@@ -432,7 +437,6 @@ void ofApp::saveFrame(){
 
 //--------------------------------------------------------------
 void ofApp::stopRecording(){
-    
     recordingState = PAUSED;
     threadRecorder.addFrame();
         // add a blank frame to trigger closeFolder on threadRecorder
@@ -442,7 +446,6 @@ void ofApp::stopRecording(){
 
 //--------------------------------------------------------------
 void ofApp::defineShaders(){
-    
     // Define Shaders - thanks to Yuya Hanai
     #ifdef TARGET_OPENGLES
     alphaShader.load("shadersES2/shader");
@@ -478,6 +481,73 @@ void ofApp::defineShaders(){
 void ofApp::calibrateBackground(){
     grayBg = grayImage;
     calibrate = false;
+}
+
+
+//--------------------------------------------------------------
+void ofApp::calculatePhysics(){
+    
+    // Cheap gravity simulator
+    ofPixels & pix = grayDiff.getPixels();
+    
+    
+    // LOOP THROUGH ALL GNOMES
+    for (int i = 0; i < numGnomes; i ++) {
+        
+        // If Gnome is active
+        if (gnomes[i].activeGnome) {
+        
+            // Calculate dx
+            gnomes[i].dx += gravity/30;
+            if (gnomes[i].x + gnomes[i].dx > w) {
+                gnomes[i].dx = w - gnomes[i].x;
+            }
+//            if (gnomes[i].dx < 0) {
+//                gnomes[i].dx = 0;
+//            }
+            
+            // Set checkX & checkY values
+            int checkX = gnomes[i].x;
+            int checkY = depthW * gnomes[i].y;
+            
+            // PREDICT if Gnome will fall to a white pixel within dx
+            
+            // loop through x values from current to dx
+            for (int j = 0; j < gnomes[i].dx; j ++) {
+                checkX = gnomes[i].x + j;
+                    
+                // if one is white, then stop there
+                if (pix[(int)checkX + (int)checkY] > 200) {
+                    gnomes[i].dx = 0;
+                    
+                    // if already on a white pixel (i.e. j = 0), rise up
+                    if (j == 0) {
+                        int checkW = gnomes[i].w;
+                        if (gnomes[i].x < gnomes[i].w) {
+                            checkW = gnomes[i].x;
+                        }
+                        for (int k = 1; k < checkW; k ++) {
+                            if (pix[(int)checkX + (int)checkY - k] < 100) {
+                                gnomes[i].dx -= k;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+    
+            // Let gnome fall --> if dx is 0, then it won't go anywhere!
+            gnomes[i].x += gnomes[i].dx;
+        }
+    }
+    
+            // If bottom depth pixel is white, move upward for each white pixel above bottom
+//            if (pix[bottom] == 255) {
+//                gnomes[i].dx = 0;
+
+//                gnomes[i].x += gnomes[i].speed;
+//                gnomes[i].dx = 0;
+
 }
 
 

@@ -29,8 +29,8 @@ class ofApp : public ofBaseApp{
 public:
     bool isRecording, humanDetected, isWaitingToRecord;
     string gnomeDirectory, currentPath, fileName;
-    int frameCount, maxFramesPerGnome, minFramesPerGnome, threshold;
-    float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer;
+    int frameCount, maxFramesPerGnome, minFramesPerGnome, threshold, offset;
+    float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer, gravity;
     
     ofxImageSequenceRecorder threadRecorder;
     RecordingState recordingState;
@@ -55,6 +55,8 @@ public:
     int w, h, depthH, depthW, saveW, saveH;
     float screenRotation;
     
+    // vec4 depthDraw;
+    
     //  Kinect & OpenCV Variables
     //    ofxMultiKinectV2 kinect;
     //    ofxCvColorImage colorImg;
@@ -63,7 +65,6 @@ public:
     
     int nearThreshold, farThreshold;
     bool learnBkd;
-    //    ofxCvContourFinder contourFinder;
     
     //     The Gnomes
     int numGnomes;
@@ -87,6 +88,7 @@ public:
     void calibrateBackground();
     void defineShaders();
     void activateGnome();
+    void calculatePhysics();
     
     
     // openFrameworks methods

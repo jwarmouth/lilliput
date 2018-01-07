@@ -19,6 +19,7 @@ void gnome::setup() {
     vidWidth = 1920;
     vidHeight = 1080;
     speed = 5.0;
+    flipped = 1;    // 1: normal, -1: flipped
     
     gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
     sequence.enableThreadedLoad(true);
@@ -40,26 +41,30 @@ void gnome::reset() {
 
 //--------------------------------------------------------------
 void gnome::update() {
-    
     if (counter > sequence.getCurrentFrame()) {
-        activeGnome = false;
+        // Deactivate if it reaches end of sequence
+//        activeGnome = false;
     } else {
         counter = sequence.getCurrentFrame();
     }
     
-    fall();
+//    fall();
     
 }
 
 
 //--------------------------------------------------------------
 void gnome::draw() {
-    
     //get the frame based on the current time and draw it
-    sequence.getTextureForTime(ofGetElapsedTimef()).draw(x, y, w, h);
+    sequence.getTextureForTime(ofGetElapsedTimef()).draw(x - w, y - h / 2 * flipped, w, h * flipped);
     
     // Draw # of frames of this Gnome
     ofDrawBitmapStringHighlight(ofToString(sequence.getCurrentFrame()), x, y);
+    
+    string toDraw = ofToString(x) + ", " + ofToString(y);
+    ofDrawBitmapStringHighlight(toDraw, x, y + 10);
+    
+    ofDrawBitmapStringHighlight(ofToString(dx), x, y - 10);
 }
 
 
@@ -71,7 +76,6 @@ void gnome::loadGnomeSequence() {
     numFrames = g.size() - 1;
     string gnomePrefix = gnomeDir + "/gnome_";
     sequence.loadSequence(gnomePrefix, "png", 0, numFrames, 4);
-//    sequence.loadSequence(gnomeDir);
     sequence.preloadAllFrames();	//this way there is no stutter when loading frames
 }
 
@@ -87,14 +91,14 @@ string gnome::chooseRandomGnome() {
 
 //--------------------------------------------------------------
 void gnome::setRandomPosition() {
-    
-    x = -w;
+    x = 0;
     y = ofRandom(h/2, 1080-(h/2));
     
     // 50% chance to flip horixontally
-//    if (ofRandom(2)>1) {
+    if (ofRandom(2) > 1) {
+        flipped = -flipped;
 //        h *= -1;
-//    }
+    }
     
     // Remember that x&y are flipped, since Kinect & screen are tilted sideways!
     // Should probably do a translator for that in the movement or draw script

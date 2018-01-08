@@ -56,6 +56,7 @@ void ofApp::setup(){
     frameFbo.allocate(saveW, saveH, GL_RGBA);
     depthFbo.allocate(saveW, saveH, GL_RGBA);
     irFbo.allocate(w, h, GL_RGB);
+    guiFbo.allocate(h, 160, GL_RGBA);
     
     // Allocate CV Images
     colorImg.allocate(w, h);
@@ -215,39 +216,110 @@ void ofApp::draw(){
             }
         }
         
-    // Draw Graph
-//        for (int i = 0; i < w; i += 100) {
-//            ofDrawBitmapStringHighlight(ofToString(i), i, 20);
-//            ofDrawBitmapStringHighlight(ofToString(i), i, h - 20);
-//        }
-        
-    // Draw Recording Icon
-        if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
-            // Draw Recorded frame
-            // frameFbo.draw(0, 0, w, h);
-            
-            ofSetColor(255, 0, 0);
-            ofDrawCircle(30, 50, 15);
-            
-            ofSetColor(255, 255, 255);
-            ofDrawBitmapString(ofToString(frameCount), 30, 80);
-        }
-        
-    // Draw Frame Rate to screen
-        ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
-        
-        
-    // Draw Report to screen
-//        ofPushMatrix();
-//        ofSetColor(100,100,100,128);
-//        ofTranslate(0, h);
-//        ofRotateZ(-90);
-//        ofDrawRectangle(0, 0, h, 160);
-//        
-//        ofDrawBitmapString( ("Frame Rate: " + ofToString(ofGetFrameRate())) , 10, 20);
-//        ofPopMatrix();
+    // Draw GUI
+        drawGui();
     }
     
+}
+
+//--------------------------------------------------------------
+void ofApp::drawGui(){
+    
+    // Draw Graph to screen
+    //        for (int i = 0; i < w; i += 100) {
+    //            ofDrawBitmapStringHighlight(ofToString(i), i, 20);
+    //            ofDrawBitmapStringHighlight(ofToString(i), i, h - 20);
+    //        }
+    
+    ofColor highlight(255,0,0);
+    ofColor normal (200,200,200);
+    
+    
+    // Begin GUI Fbo
+    guiFbo.begin();
+    ofClear(0, 0, 0, 0);
+    
+    // Draw background rectangle
+    ofSetColor(100,100,100,128);
+    ofDrawRectangle(0, 0, h, 160);
+    
+    // Draw Frame Rate
+    ofSetColor(highlight);
+    ofDrawBitmapStringHighlight(ofToString(ofGetFrameRate()), 10, 20);
+    
+
+    // Draw Recording Icon
+    if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
+        // Draw Recorded frame
+        // frameFbo.draw(0, 0, w, h);
+        
+        ofSetColor(highlight);
+        ofDrawCircle(30, 50, 15);
+        ofDrawBitmapString(ofToString(frameCount), 50, 50);
+    }
+    
+
+    
+    // Draw Key Controls
+    ofSetColor(draw_ir ? highlight : normal);
+    ofDrawBitmapString("I: Draw IR", 100, 80);
+    
+    ofSetColor(draw_depth ? highlight : normal);
+    ofDrawBitmapString("D: Draw Depth", 300, 80);
+    
+    ofSetColor(draw_registered ? highlight : normal);
+    ofDrawBitmapString("R: Draw Registered", 500, 80);
+    
+    ofSetColor(draw_blur ? highlight : normal);
+    ofDrawBitmapString("B: Draw Blur", 700, 80);
+    
+    ofSetColor(draw_gray ? highlight : normal);
+    ofDrawBitmapString("G: Draw Gray", 900, 80);
+    
+    ofSetColor(calibrate ? highlight : normal);
+    ofDrawBitmapString("X: Calibrate", 100, 120);
+    
+    ofSetColor(draw_contours ? highlight : normal);
+    ofDrawBitmapString("C: Draw Contours", 300, 120);
+    
+    ofSetColor(process_occlusion ? highlight : normal);
+    ofDrawBitmapString("O: Process Occlusion", 500, 120);
+
+//    
+//    if (key == '0') {
+//        gnomes[0].reset();
+//    }
+//    
+//    if (key == '1') {
+//        gnomes[1].reset();
+//    }
+//    
+//    if (key == '2') {
+//        gnomes[2].reset();
+//    }
+//    
+//    if (key == '3') {
+//        gnomes[3].reset();
+//    }
+//    
+//    if (key == '4') {
+//        gnomes[4].reset();
+//    }
+    
+    
+    // Draw Report to screen
+    //
+    //        ofDrawBitmapString( ("Frame Rate: " + ofToString(ofGetFrameRate())) , 10, 20);
+    //        ofPopMatrix();
+    
+    guiFbo.end();
+    
+    // Draw GUI to screen
+    ofPushMatrix();
+    ofTranslate(0, h);
+    ofRotateZ(-90);
+    guiFbo.draw(0, 0, h, 160);
+    ofPopMatrix();
 }
 
 
@@ -501,42 +573,41 @@ void ofApp::calculatePhysics(){
     
     
     // LOOP THROUGH ALL GNOMES
-    for (int i = 0; i < numGnomes; i ++) {
+    for (int i = 0; i < numGnomes; i++) {
         
         // If Gnome is active
         if (gnomes[i].activeGnome) {
         
             // Calculate dx
             gnomes[i].dx += gravity/30;
-            if (gnomes[i].x + gnomes[i].dx > w) {
-                gnomes[i].dx = w - gnomes[i].x;
+            if (gnomes[i].x + gnomes[i].dx > depthW + offset) {
+                gnomes[i].dx = depthW + offset - gnomes[i].x - 1;
             }
-//            if (gnomes[i].dx < 0) {
-//                gnomes[i].dx = 0;
-//            }
             
             // Set checkX & checkY values
             int checkX = gnomes[i].x;
-            int checkY = depthW * gnomes[i].y;
+            int checkY = w * gnomes[i].y;
             
             // PREDICT if Gnome will fall to a white pixel within dx
             
             // loop through x values from current to dx
-            for (int j = 0; j < gnomes[i].dx; j ++) {
+            for (int j = 0; j < gnomes[i].dx; j++) {
                 checkX = gnomes[i].x + j;
                     
                 // if one is white, then stop there
-                if (pix[(int)checkX + (int)checkY] > 200) {
+                if (pix[(int)(checkX + checkY)] > 200) {
                     gnomes[i].dx = 0;
                     
                     // if already on a white pixel (i.e. j = 0), rise up
                     if (j == 0) {
+//                        gnomes[i].dx = -1;
+                        checkX = gnomes[i].x;
                         int checkW = gnomes[i].w;
                         if (gnomes[i].x < gnomes[i].w) {
                             checkW = gnomes[i].x;
                         }
-                        for (int k = 1; k < checkW; k ++) {
-                            if (pix[(int)checkX + (int)checkY - k] < 100) {
+                        for (int k = 1; k < checkW; k++) {
+                            if (pix[(int)(checkX + checkY - k)] < 100) {
                                 gnomes[i].dx -= k;
                                 break;
                             }

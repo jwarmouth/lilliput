@@ -92,7 +92,7 @@ string gnome::chooseRandomGnome() {
 //--------------------------------------------------------------
 void gnome::setRandomPosition() {
     x = 0;
-    y = ofRandom(h/2, 1080-(h/2));
+    y = (int)(ofRandom(h/2, 1080-(h/2)));
     
     // 50% chance to flip horixontally
     if (ofRandom(2) > 1) {

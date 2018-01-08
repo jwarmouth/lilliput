@@ -46,7 +46,7 @@ public:
     
     ofTexture colorTex0, depthTex0, irTex0;
     ofShader depthShader, irShader, alphaShader, shaderBlurX, shaderBlurY;
-    ofFbo frameFbo, depthFbo, irFbo, fboBlurOnePass, fboBlurTwoPass;
+    ofFbo frameFbo, depthFbo, irFbo, fboBlurOnePass, fboBlurTwoPass, guiFbo;
     
     bool process_occlusion, calibrate;
     bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray, draw_contours;
@@ -89,6 +89,7 @@ public:
     void defineShaders();
     void activateGnome();
     void calculatePhysics();
+    void drawGui();
     
     
     // openFrameworks methods

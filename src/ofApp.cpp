@@ -15,9 +15,9 @@
 void ofApp::setup(){
     // Application Settings
     ofSetFrameRate(60);
-    ofEnableAlphaBlending();
-    ofEnableSmoothing();
-    ofSetVerticalSync(true);
+//    ofEnableAlphaBlending();
+//    ofEnableSmoothing();
+//    ofSetVerticalSync(true);
     
     // Define Shaders
     defineShaders();
@@ -83,6 +83,7 @@ void ofApp::setup(){
     numGnomes = 5;
     for (int i=0; i<numGnomes; i++) {
         gnomes[i].setup(gnomesDirectory);
+        gnomes[i].startThread();
         
         // If we use a vector we should use this code
 //        gnome tempGnome;
@@ -142,11 +143,11 @@ void ofApp::update(){
 
     // Update Gnomes
         // Loop through & Update Gnomes if active
-        for (int i=0; i<numGnomes; i++) {
-            if (gnomes[i].activeGnome) {
-                gnomes[i].update();
-            }
-        }
+//        for (int i=0; i<numGnomes; i++) {
+//            if (gnomes[i].activeGnome) {
+//                gnomes[i].update();
+//            }
+//        }
         
     // Physics Calculations for Gnomes
         calculatePhysics();

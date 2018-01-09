@@ -13,25 +13,15 @@
 
 //--------------------------------------------------------------
 void gnome::setup(string gnomesPath) {
-    
     w = 192;    //256;
     h = 159;    //212;
     vidWidth = 1920;
     vidHeight = 1080;
-//    speed = 5.0;
-    flipped = 1;    // 1: normal, -1: flipped
-    
-    // Load Gnomes Directory from gnomesDir.txt
-//    ifstream fin;
-//    fin.open(ofToDataPath("gnomesDir.txt").c_str());
-//    getline(fin, gnomesDirectory);
-//    fin.close();
-    //gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
+    flip = 1;    // 1: normal, -1: flipped
     
     gnomesDirectory = gnomesPath;
-    
     sequence.enableThreadedLoad(true);
-//    sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
+//    sequence.setFrameRate(30); // 10 fps for Muybridge horse
 }
 
 
@@ -46,11 +36,16 @@ void gnome::reset() {
 
 
 //--------------------------------------------------------------
-void gnome::update() {
-    if (activeGnome) {
-        counter = sequence.getCurrentFrame();
-        if (counter > sequence.getCurrentFrame()) {
-            activeGnome = false;  // Deactivate if it reaches end of sequence
+void gnome::threadedFunction() {
+    while(isThreadRunning()) {
+        if (activeGnome) {
+            counter = sequence.getCurrentFrame();
+            if (counter > sequence.getCurrentFrame()) {
+                activeGnome = false;  // Deactivate if it reaches end of sequence
+            }
+            
+            //sequence.getTextureForTime(ofGetElapsedTimef()).draw(x-w, y-h/2*flip, w, h*flip);
+            
         }
     }
 }
@@ -59,7 +54,9 @@ void gnome::update() {
 //--------------------------------------------------------------
 void gnome::draw() {
     //get the frame based on the current time and draw it
-    sequence.getTextureForTime(ofGetElapsedTimef()).draw(x - w, y - h / 2 * flipped, w, h * flipped);
+    sequence.getTextureForTime(ofGetElapsedTimef()).draw(x-w, y-h/2*flip, w, h * flip);
+    
+    //sequence.getTextureForTime(ofGetElapsedTimef()).draw(x, y, w, h);
     
     // Draw # of frames of this Gnome
 //    ofDrawBitmapStringHighlight(ofToString(sequence.getCurrentFrame()), x, y);
@@ -73,8 +70,9 @@ void gnome::draw() {
 
 //--------------------------------------------------------------
 void gnome::loadGnomeSequence() {
+    sequence.unloadSequence();
     gnomeDir = chooseRandomGnome();
-    cout << "Gnome Directory: " << gnomeDir;
+    cout << "Gnome Directory: " << gnomeDir << endl;
     ofDirectory g(gnomeDir);
     g.listDir();
     numFrames = g.size() - 1;
@@ -86,7 +84,7 @@ void gnome::loadGnomeSequence() {
     string fpsString;
     file >> fpsString;
     float fps = ofToFloat(fpsString);
-    sequence.setFrameRate(fps); //set to ten frames per second for Muybridge's horse.
+    sequence.setFrameRate((int)fps); //set to ten frames per second for Muybridge's horse.
 }
 
 
@@ -101,12 +99,12 @@ string gnome::chooseRandomGnome() {
 
 //--------------------------------------------------------------
 void gnome::setRandomPosition() {
-    x = 0;
+    x = w;
     y = (int)(ofRandom(h/2, 1080-(h/2)));
     
     // 50% chance to flip horixontally
     if (ofRandom(2) > 1) {
-        flipped = -flipped;
+        flip = -flip;
     }
     
     // Remember that x&y are flipped, since Kinect & screen are tilted sideways!

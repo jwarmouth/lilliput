@@ -22,7 +22,7 @@
 #include "ofxImageSequence.h"
 #include <fstream>
 
-class gnome {
+class gnome: public ofThread {
 public:
     
     // Methods
@@ -36,15 +36,14 @@ public:
     void setRandomPosition();
 //    void calculateGravity();
     
+    void threadedFunction();
+    
     // Properties
     float x, y, dx, dy, vidWidth, vidHeight, speed;
-    int w, h, numFrames, counter, flipped;
+    int w, h, numFrames, counter, flip;
     bool activeGnome;
     string gnomesDirectory, gnomeDir;
     ofxImageSequence sequence;
-    
-//    ofVideoPlayer vid;
-//    bool playing;
     
     // References to "Global" Properties
 //    float terminalVelocity;

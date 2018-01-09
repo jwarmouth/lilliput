@@ -20,12 +20,13 @@
 #include "ofxMultiKinectV2.h"
 #include "ofxOpenCv.h"
 #include "ofxImageSequence.h"
+#include <fstream>
 
 class gnome {
 public:
     
     // Methods
-    void setup();
+    void setup(string gnomesPath);
     void reset();
     void update();
     void draw();

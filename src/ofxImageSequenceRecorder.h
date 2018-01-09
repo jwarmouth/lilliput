@@ -16,9 +16,11 @@
 
 #include "ofMain.h"
 #include "ofApp.h"
+#include <fstream>
 
 typedef struct {
     string fileName;
+    string path;
     ofPixels image;
 } QueuedImage;
 
@@ -30,11 +32,17 @@ public:
     string path;
     string prefix;
     string format;
+    string gnomesDirectory;
     int numberWidth;
+    float frameRateTotal;
     
     ofxImageSequenceRecorder(){
         counter=0;
         numberWidth=4;
+    }
+    
+    void setGnomesDirectory (string filePath) {
+        gnomesDirectory = filePath;
     }
     
     void setPath(string filePath){
@@ -62,7 +70,7 @@ public:
             if(!q.empty()){
                 QueuedImage i = q.front();
                 if (i.image.size() == 1) {
-                    closeFolder();
+                    closeFolder(i.path);
                 } else {
                     ofSaveImage(i.image, i.fileName);
                 }
@@ -73,16 +81,18 @@ public:
 
     
     
-    void addFrame(ofPixels imageToSave) {
+    void addFrame(ofPixels imageToSave, float frameRate) {
         
         //char fileName[100];
         //snprintf(fileName,  "%s%.4i.%s" , prefix.c_str(), counter, format.c_str());
-        string fileName = path + prefix + ofToString(counter, numberWidth, '0') + "." + format;
+        string fileName = gnomesDirectory + "/Temp/gnome_" + path + prefix + ofToString(counter, numberWidth, '0') + "." + format;
         counter++;
+        frameRateTotal += frameRate;
         
         QueuedImage qImage;
         
         qImage.fileName = fileName;
+        qImage.path = path;
         qImage.image = imageToSave;
         
         q.push(qImage);
@@ -94,7 +104,8 @@ public:
         // add a blank frame to trigger closeFolder
         QueuedImage qImage;
         
-        qImage.fileName = path;
+        qImage.fileName = gnomesDirectory + "/Temp/gnome_" + path;
+        qImage.path = path;
         
         ofPixels dummy;
         dummy.allocate(1, 1, OF_IMAGE_GRAYSCALE);
@@ -104,10 +115,10 @@ public:
         
     }
     
-    void closeFolder() {
+    void closeFolder(string tempPath) {
         
         // Set current recording path
-        ofDirectory dir(path);
+        ofDirectory dir(gnomesDirectory + "/Temp/gnome_" + tempPath);
         dir.listDir();
         int size = dir.size();
         
@@ -119,7 +130,20 @@ public:
             for (int i = size - 15; i < size; i++) {
                 dir.getFile(i).remove();
             }
+            
+            // Move Directory from Temp to Gnomes
+            dir.moveTo(gnomesDirectory + "/Gnomes/gnome_" + tempPath, false, false);
+            
+            // Calculate Average Frame Rate
+            string frameRateAvg = ofToString(frameRateTotal / counter);
+            
+            // Create fps.txt file
+            ofFile file (gnomesDirectory + "/Gnomes/gnome_" + tempPath + "/fps.txt", ofFile::WriteOnly);
+            file << frameRateAvg;
+            
+
         }
+        
     }
     
     

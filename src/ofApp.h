@@ -16,6 +16,7 @@
 #include "GpuRegistration.h"
 #include "ofxImageSequence.h"
 #include "ofxImageSequenceRecorder.h"
+#include <fstream>
 
 typedef enum {
     PAUSED,
@@ -28,7 +29,7 @@ class ofApp : public ofBaseApp{
 
 public:
     bool isRecording, humanDetected, isWaitingToRecord;
-    string gnomeDirectory, currentPath, fileName;
+    string gnomesDirectory, currentPath, fileName;
     int frameCount, maxFramesPerGnome, minFramesPerGnome, threshold, offset;
     float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer, gravity;
     

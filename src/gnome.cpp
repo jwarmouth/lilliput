@@ -12,7 +12,7 @@
 
 
 //--------------------------------------------------------------
-void gnome::setup() {
+void gnome::setup(string gnomesPath) {
     
     w = 192;    //256;
     h = 159;    //212;
@@ -21,9 +21,17 @@ void gnome::setup() {
 //    speed = 5.0;
     flipped = 1;    // 1: normal, -1: flipped
     
-    gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
+    // Load Gnomes Directory from gnomesDir.txt
+//    ifstream fin;
+//    fin.open(ofToDataPath("gnomesDir.txt").c_str());
+//    getline(fin, gnomesDirectory);
+//    fin.close();
+    //gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
+    
+    gnomesDirectory = gnomesPath;
+    
     sequence.enableThreadedLoad(true);
-    sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
+//    sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
 }
 
 
@@ -66,19 +74,26 @@ void gnome::draw() {
 //--------------------------------------------------------------
 void gnome::loadGnomeSequence() {
     gnomeDir = chooseRandomGnome();
+    cout << "Gnome Directory: " << gnomeDir;
     ofDirectory g(gnomeDir);
     g.listDir();
     numFrames = g.size() - 1;
     string gnomePrefix = gnomeDir + "/gnome_";
     sequence.loadSequence(gnomePrefix, "png", 0, numFrames, 4);
     sequence.preloadAllFrames();	//this way there is no stutter when loading frames
+    
+    ofFile file (gnomeDir + "/fps.txt");
+    string fpsString;
+    file >> fpsString;
+    float fps = ofToFloat(fpsString);
+    sequence.setFrameRate(fps); //set to ten frames per second for Muybridge's horse.
 }
 
 
 //--------------------------------------------------------------
 string gnome::chooseRandomGnome() {
     // Randomly choose a gnome from directory
-    ofDirectory dir(gnomesDirectory);
+    ofDirectory dir(gnomesDirectory + "/Gnomes");
     dir.listDir();
     return dir.getPath(floor(ofRandom(dir.size())));
 }

@@ -22,16 +22,20 @@ void ofApp::setup(){
     // Define Shaders
     defineShaders();
     
-    // Gnome Directory - Would like to read this from a .txt file - even better, to pick a folder.
-    gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
+    // Read GnomesDirectory from gnomesDir.txt - even better, to pick a folder.
+    ifstream fin;
+    fin.open(ofToDataPath("gnomesDir.txt").c_str());
+    getline(fin, gnomesDirectory);
+    fin.close();
+//    gnomeDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes";
     
     // Dimensions
     w = 1920;
     h = 1080;
     depthW = 1500;
     depthH = 1080;
-    saveW = 128; //256 / 512 / 1024;
-    saveH = 106; //212 / 424 / 848;
+    saveW = 1024; //128; //256 / 512 / 1024;
+    saveH = 848; //106; //212 / 424 / 848;
     offset = 240;
     // depthDraw = vec4 (offset, 0, depthW, depthH);
     
@@ -73,11 +77,12 @@ void ofApp::setup(){
     // Thread Recorder Defaults
     threadRecorder.setPrefix("/gnome_");
     threadRecorder.setFormat("png");
+    threadRecorder.setGnomesDirectory(gnomesDirectory);
     
     // Loop through and initialize Gnomes
     numGnomes = 5;
     for (int i=0; i<numGnomes; i++) {
-        gnomes[i].setup();
+        gnomes[i].setup(gnomesDirectory);
         
         // If we use a vector we should use this code
 //        gnome tempGnome;
@@ -412,9 +417,9 @@ void ofApp::activateGnome() {
 
 //--------------------------------------------------------------
 void ofApp::makeNewDirectory(){
-    currentPath = gnomeDirectory + "/gnome_" + ofGetTimestampString();
-    ofDirectory dir(currentPath);
-    dir.createDirectory(currentPath);
+    currentPath = ofGetTimestampString();
+    ofDirectory dir(gnomesDirectory + "/Temp/gnome_" + currentPath);
+    dir.createDirectory(gnomesDirectory + "/Temp/gnome_" + currentPath);
     
     // IT WORKS!!!  http://openframeworks.cc/documentation/utils/ofDirectory/
     
@@ -500,7 +505,7 @@ void ofApp::saveFrame(){
     // Prepare pixels object
     ofPixels pix; // allocate pix
     frameFbo.readToPixels(pix);
-    threadRecorder.addFrame(pix);
+    threadRecorder.addFrame(pix, ofGetFrameRate()); 
     
     //  IT WORKS!!! Saves .png sequence with alpha channel
     //    fileName = currentPath + "/gnome_" + ofToString(frameCount, 3, '0') + ".png";

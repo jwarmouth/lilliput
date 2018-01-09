@@ -14,7 +14,7 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     // Application Settings
-    ofSetFrameRate(30);
+    ofSetFrameRate(60);
     ofEnableAlphaBlending();
     ofEnableSmoothing();
     ofSetVerticalSync(true);
@@ -30,10 +30,15 @@ void ofApp::setup(){
     h = 1080;
     depthW = 1500;
     depthH = 1080;
-    saveW = 1024; //256 / 512 / 1024;
-    saveH = 848; //212 / 424 / 848;
+    saveW = 128; //256 / 512 / 1024;
+    saveH = 106; //212 / 424 / 848;
     offset = 240;
     // depthDraw = vec4 (offset, 0, depthW, depthH);
+    
+    // Initialize Kinect
+    kinect0.open(true, true, 0, 2);
+    kinect0.start();
+    gr.setup(kinect0.getProtonect(), 2);
     
     // Intervals
     screenRotation = 90;
@@ -64,11 +69,6 @@ void ofApp::setup(){
     grayBg.allocate(w, h);
     grayDiff.allocate(w, h);
     threshold = 70;
-    
-    // Initialize Kinect
-    kinect0.open(true, true, 0, 2);
-    kinect0.start();
-    gr.setup(kinect0.getProtonect(), 2);
     
     // Thread Recorder Defaults
     threadRecorder.setPrefix("/gnome_");
@@ -159,6 +159,17 @@ void ofApp::draw(){
     // Draw Kinect video frame
         colorTex0.draw(0, 0, w, h);
         
+    // Draw IR
+        if (draw_ir) {
+            irFbo.draw(0, 0, w, h);
+            // irFbo.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+        }
+        
+    // Draw Gray CV Image
+        if (draw_gray) {
+            grayDiff.draw(0, 0, w, h);
+        }
+        
     // Draw Depth
         if (draw_depth) {
             depthShader.begin();
@@ -171,23 +182,6 @@ void ofApp::draw(){
         if (draw_blur) {
             fboBlurTwoPass.draw(offset, 0, depthW, depthH);
             //fboBlurTwoPass.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-        }
-        
-    // Draw IR
-        if (draw_ir) {
-            irFbo.draw(0, 0, w, h);
-            // irFbo.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-        }
-        
-    // Draw Registered
-        if (draw_registered) {
-            gr.getRegisteredTexture(process_occlusion).draw(offset, 0, depthW, depthH);
-            //gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-        }
-        
-    // Draw Gray CV Image
-        if (draw_gray) {
-            grayDiff.draw(0, 0, w, h);
         }
         
     // Draw Contours
@@ -207,6 +201,12 @@ void ofApp::draw(){
 //                                   contourFinder.blobs[i].boundingRect.getCenter().y + 0);
 //            }
 //        }
+        }
+        
+    // Draw Registered
+        if (draw_registered) {
+            gr.getRegisteredTexture(process_occlusion).draw(offset, 0, depthW, depthH);
+            //gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
         }
         
     // Loop through & Draw Gnomes
@@ -264,17 +264,14 @@ void ofApp::drawGui(){
     ofSetColor(draw_ir ? highlight : normal);
     ofDrawBitmapString("I: Draw IR", 100, 80);
     
-    ofSetColor(draw_depth ? highlight : normal);
-    ofDrawBitmapString("D: Draw Depth", 300, 80);
+    ofSetColor(draw_gray ? highlight : normal);
+    ofDrawBitmapString("G: Draw Gray", 300, 80);
     
-    ofSetColor(draw_registered ? highlight : normal);
-    ofDrawBitmapString("R: Draw Registered", 500, 80);
+    ofSetColor(draw_depth ? highlight : normal);
+    ofDrawBitmapString("D: Draw Depth", 500, 80);
     
     ofSetColor(draw_blur ? highlight : normal);
     ofDrawBitmapString("B: Draw Blur", 700, 80);
-    
-    ofSetColor(draw_gray ? highlight : normal);
-    ofDrawBitmapString("G: Draw Gray", 900, 80);
     
     ofSetColor(calibrate ? highlight : normal);
     ofDrawBitmapString("X: Calibrate", 100, 120);
@@ -282,8 +279,11 @@ void ofApp::drawGui(){
     ofSetColor(draw_contours ? highlight : normal);
     ofDrawBitmapString("C: Draw Contours", 300, 120);
     
+    ofSetColor(draw_registered ? highlight : normal);
+    ofDrawBitmapString("R: Draw Registered", 500, 120);
+    
     ofSetColor(process_occlusion ? highlight : normal);
-    ofDrawBitmapString("O: Process Occlusion", 500, 120);
+    ofDrawBitmapString("O: Process Occlusion", 700, 120);
 
 //    
 //    if (key == '0') {
@@ -551,10 +551,6 @@ void ofApp::defineShaders(){
     irShader.setupShaderFromSource(GL_FRAGMENT_SHADER, irFragmentShader);
     irShader.linkProgram();
     
-    
-    fboBlurOnePass.allocate(depthW, depthH);
-    fboBlurTwoPass.allocate(depthW, depthH);
-    
 }
 
 
@@ -579,7 +575,7 @@ void ofApp::calculatePhysics(){
         if (gnomes[i].activeGnome) {
         
             // Calculate dx
-            gnomes[i].dx += gravity/30;
+            gnomes[i].dx += gravity/ofGetFrameRate();
             if (gnomes[i].x + gnomes[i].dx > depthW + offset) {
                 gnomes[i].dx = depthW + offset - gnomes[i].x - 1;
             }
@@ -591,25 +587,30 @@ void ofApp::calculatePhysics(){
             // PREDICT if Gnome will fall to a white pixel within dx
             
             // loop through x values from current to dx
-            for (int j = 0; j < gnomes[i].dx; j++) {
-                checkX = gnomes[i].x + j;
+            if (gnomes[i].dx > 0) {
+                for (int j = 0; j < gnomes[i].dx; j++) {
+                    checkX = gnomes[i].x + j;
                     
-                // if one is white, then stop there
-                if (pix[(int)(checkX + checkY)] > 200) {
-                    gnomes[i].dx = 0;
+                    // if one is white, then stop there
+                    if (pix[(int)(checkX + checkY)] > 200) {
+                        gnomes[i].dx = j;
                     
-                    // if already on a white pixel (i.e. j = 0), rise up
-                    if (j == 0) {
-//                        gnomes[i].dx = -1;
-                        checkX = gnomes[i].x;
-                        int checkW = gnomes[i].w;
-                        if (gnomes[i].x < gnomes[i].w) {
-                            checkW = gnomes[i].x;
-                        }
-                        for (int k = 1; k < checkW; k++) {
-                            if (pix[(int)(checkX + checkY - k)] < 100) {
-                                gnomes[i].dx -= k;
-                                break;
+                        // if already on a white pixel (i.e. j = 0), rise up
+                        if (j == 0) {
+//                          gnomes[i].dx = -1;
+                            checkX = gnomes[i].x;
+                            int checkW = gnomes[i].w;
+                            if (gnomes[i].x < gnomes[i].w) {
+                                checkW = gnomes[i].x;
+                            }
+                            for (int k = 1; k < checkW; k++) {
+                                if (pix[(int)(checkX + checkY - k)] < 100) {
+                                    gnomes[i].dx -= k;
+                                    if (gnomes[i].dx > gnomes[i].w) {
+                                        gnomes[i].dx = gnomes[i].w;
+                                    }
+                                    break;
+                                }
                             }
                         }
                     }

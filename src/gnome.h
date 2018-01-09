@@ -29,11 +29,11 @@ public:
     void reset();
     void update();
     void draw();
-    void fall();
+//    void fall();
     string chooseRandomGnome();
     void loadGnomeSequence();
     void setRandomPosition();
-    void calculateGravity();
+//    void calculateGravity();
     
     // Properties
     float x, y, dx, dy, vidWidth, vidHeight, speed;

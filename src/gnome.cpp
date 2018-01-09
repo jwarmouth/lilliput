@@ -14,23 +14,21 @@
 //--------------------------------------------------------------
 void gnome::setup() {
     
-    w = 256;
-    h = 212;
+    w = 192;    //256;
+    h = 159;    //212;
     vidWidth = 1920;
     vidHeight = 1080;
-    speed = 5.0;
+//    speed = 5.0;
     flipped = 1;    // 1: normal, -1: flipped
     
     gnomesDirectory = "/Jeffu Documents/ART/2017 Lilliput/Saved Gnomes/";
     sequence.enableThreadedLoad(true);
     sequence.setFrameRate(30); //set to ten frames per second for Muybridge's horse.
-
 }
 
 
 //--------------------------------------------------------------
 void gnome::reset() {
-    
     activeGnome = true;
     counter = 0;
     dx = 0;
@@ -41,15 +39,12 @@ void gnome::reset() {
 
 //--------------------------------------------------------------
 void gnome::update() {
-    if (counter > sequence.getCurrentFrame()) {
-        // Deactivate if it reaches end of sequence
-//        activeGnome = false;
-    } else {
+    if (activeGnome) {
         counter = sequence.getCurrentFrame();
+        if (counter > sequence.getCurrentFrame()) {
+            activeGnome = false;  // Deactivate if it reaches end of sequence
+        }
     }
-    
-//    fall();
-    
 }
 
 
@@ -59,12 +54,12 @@ void gnome::draw() {
     sequence.getTextureForTime(ofGetElapsedTimef()).draw(x - w, y - h / 2 * flipped, w, h * flipped);
     
     // Draw # of frames of this Gnome
-    ofDrawBitmapStringHighlight(ofToString(sequence.getCurrentFrame()), x, y);
-    
-    string toDraw = ofToString(x) + ", " + ofToString(y);
-    ofDrawBitmapStringHighlight(toDraw, x, y + 10);
-    
-    ofDrawBitmapStringHighlight(ofToString(dx), x, y - 10);
+//    ofDrawBitmapStringHighlight(ofToString(sequence.getCurrentFrame()), x, y);
+//    
+//    string toDraw = ofToString(x) + ", " + ofToString(y);
+//    ofDrawBitmapStringHighlight(toDraw, x, y + 10);
+//    
+//    ofDrawBitmapStringHighlight(ofToString(dx), x, y - 10);
 }
 
 
@@ -97,7 +92,6 @@ void gnome::setRandomPosition() {
     // 50% chance to flip horixontally
     if (ofRandom(2) > 1) {
         flipped = -flipped;
-//        h *= -1;
     }
     
     // Remember that x&y are flipped, since Kinect & screen are tilted sideways!
@@ -106,13 +100,13 @@ void gnome::setRandomPosition() {
 
 
 //--------------------------------------------------------------
-void gnome::fall() {
-    
-    if (x < vidWidth - w * 2) {
-        dx += speed;
-        x += dx;
-    }
-    
+//void gnome::fall() {
+//    
+//    if (x < vidWidth - w * 2) {
+//        dx += speed;
+//        x += dx;
+//    }
+
     
     //  If gnome falls to bottom, Reset Gnome
 //    if (x > vidWidth - h) {
@@ -132,12 +126,12 @@ void gnome::fall() {
     //        setup();
     //    }
     
-}
+//}
 
 
 //--------------------------------------------------------------
-void gnome::calculateGravity() {
-    
+//void gnome::calculateGravity() {
+
     //    //      Gravity & Collision System - calculate bottom of gnome
     //    int bottom = vidWidth * (y + h) + x + w/2;
     //
@@ -157,7 +151,7 @@ void gnome::calculateGravity() {
     //    } else {
     //        fall();
     //    }
-}
+//}
 
 
 

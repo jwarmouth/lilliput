@@ -15,9 +15,9 @@
 void ofApp::setup(){
     // Application Settings
     ofSetFrameRate(30);
-//    ofEnableAlphaBlending();
-//    ofEnableSmoothing();
-//    ofSetVerticalSync(true);
+    ofEnableAlphaBlending();
+    ofEnableSmoothing();
+    ofSetVerticalSync(true);
     
     // Define Shaders
     defineShaders();
@@ -36,10 +36,16 @@ void ofApp::setup(){
     depthH = 1080;
     frameW = 1024; //128; //256 / 512 / 1024;
     frameH = 848; //106; //212 / 424 / 848;
-    saveW = 192;
-    saveH = 159;
+    saveW = 225; //192;
+    saveH = 162; //159;
     offset = 240;
     // depthDraw = vec4 (offset, 0, depthW, depthH);
+    
+    // OK - here's some new numbers for Gnome display:
+    // 1920 * 0.15 = 288
+    // 1500 * 0.15 = 225
+    // 1080 * 0.15 = 162
+    // SaveW offset -> 288 - 225 = 63 / 2 ~= 32
     
     // Initialize Kinect
     kinect0.open(true, true, 0, 2);
@@ -69,6 +75,8 @@ void ofApp::setup(){
     saveFbo.allocate(saveW, saveH, GL_RGBA);
     irFbo.allocate(w, h, GL_RGB);
     guiFbo.allocate(h, 160, GL_RGBA);
+    grayFbo.allocate(w, h, GL_RGBA);
+    fullFrameFbo.allocate(w, h, GL_RGBA);
     
     // Allocate CV Images
     colorImg.allocate(w, h);
@@ -141,6 +149,9 @@ void ofApp::update(){
         // also, find holes is set to true so we will get interior contours as well....
         contourFinder.findContours(grayDiff, 100, (w*h)/3, 5, false, true);	// find holes
         
+    // Calculate Alpha
+        calculateAlpha();
+        
     // Check Recording
         checkRecording();
 
@@ -160,13 +171,17 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofBackground(255);
+    ofBackground(0);
     ofSetColor(255);
     
     if (colorTex0.isAllocated() && depthTex0.isAllocated()) {
         
     // Draw Kinect video frame
-        colorTex0.draw(0, 0, w, h);
+        if (draw_alpha) {
+            fullFrameFbo.draw(0, 0, w, h);
+        } else {
+            colorTex0.draw(0, 0, w, h);
+        }
         
     // Draw IR
         if (draw_ir) {
@@ -192,6 +207,9 @@ void ofApp::draw(){
             fboBlurTwoPass.draw(offset, 0, depthW, depthH);
             //fboBlurTwoPass.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
         }
+        
+    // Draw Video w/Alpha
+        
         
     // Draw Contours
         if (draw_contours) {
@@ -241,7 +259,7 @@ void ofApp::drawGui(){
     //        }
     
     ofColor highlight(255, 0, 0);
-    ofColor normal (0, 0, 0);
+    ofColor normal (128, 128, 0);
     
     
     // Begin GUI Fbo
@@ -291,6 +309,9 @@ void ofApp::drawGui(){
     
     ofSetColor(process_occlusion ? highlight : normal);
     ofDrawBitmapString("O: Process Occlusion", 800, 40);
+    
+    ofSetColor(draw_alpha ? highlight : normal);
+    ofDrawBitmapString("A: Draw Alpha", 600, 60);
     
     ofSetColor (normal);
     ofDrawBitmapString("Gnomes:", 200, 60);
@@ -458,6 +479,8 @@ void ofApp::blurDepth(){
 }
 
 
+
+
 //--------------------------------------------------------------
 void ofApp::saveFrame(){
     // Draw the Registered video texture into a Frame Buffer Object
@@ -475,19 +498,25 @@ void ofApp::saveFrame(){
     // Set the alpha mask -- no longer needed since we are using a shader
     
     
-    // Draw Registered Texture into frameFbo using Depth as alpha shader
-    frameFbo.begin();
-    ofClear(0, 0, 0, 0);
-    alphaShader.begin();    // pass depth fbo to the alpha shader
-    //    alphaShader.setUniformTexture("maskTex", depthFbo.getTexture(), 1 );
-    alphaShader.setUniformTexture("maskTex", fboBlurTwoPass.getTexture(), 1 );
-    gr.getRegisteredTexture(process_occlusion).draw(0, 0, frameW, frameH);
-    alphaShader.end();
-    frameFbo.end();
+
     
+    
+    // Draw Registered Texture into frameFbo using Depth as alpha shader
+//    frameFbo.begin();
+//    ofClear(0, 0, 0, 0);
+//    alphaShader.begin();
+//    
+//    // Pass Registered Texture using depth fbo as alpha shader mask
+//    alphaShader.setUniformTexture("maskTex", fboBlurTwoPass.getTexture(), 1 );
+//    gr.getRegisteredTexture(process_occlusion).draw(0, 0, frameW, frameH);
+//    
+//    alphaShader.end();
+//    frameFbo.end();
+    
+    // Draw to SaveFbo
     saveFbo.begin();
     ofClear(0,0,0,0);
-    frameFbo.draw(0,0, saveW, saveH);
+    fullFrameFbo.draw(-32, 0, 288, saveH);
     saveFbo.end();
     
     
@@ -629,6 +658,47 @@ void ofApp::calculatePhysics(){
 
 //--------------------------------------------------------------
 void ofApp::calculateAlpha(){
+    // New grayFbo to hold Gray Diff info
+    grayFbo.begin();
+    ofClear(0, 0, 0, 0);
+    grayDiff.draw(0, 0, w, h);
+    grayFbo.end();
+    
+    fboBlurOnePass.allocate(w, h);
+    
+    // Blur Shader - Pass 1
+    fboBlurOnePass.begin();
+    ofClear(0, 0, 0, 0);
+    shaderBlurX.begin();
+    shaderBlurX.setUniform1f("blurAmnt", 1.0);
+    grayFbo.draw(0, 0, w, h);
+    shaderBlurX.end();
+    fboBlurOnePass.end();
+    
+    
+    // Blur Shader - Pass 2
+    grayFbo.begin();
+    ofClear(0, 0, 0, 0);
+    shaderBlurY.begin();
+    shaderBlurY.setUniform1f("blurAmnt", 1.0);
+    fboBlurOnePass.draw(0, 0, w, h);
+    shaderBlurY.end();
+    grayFbo.end();
+    
+    
+    // new FullFrameFbo to hold full frame alpha masked video
+    fullFrameFbo.begin();
+    ofClear(0, 0, 0, 0);
+    alphaShader.begin();
+    
+    // Pass video fbo using grayFbo as mask
+    alphaShader.setUniformTexture("maskTex", grayFbo.getTexture(), 1 );
+    colorTex0.draw(0, 0, w, h);
+    
+    alphaShader.end();
+    fullFrameFbo.end();
+    
+
     
 }
 
@@ -668,6 +738,10 @@ void ofApp::keyPressed(int key){
     
     if (key == 'c') {
         draw_contours = !draw_contours;
+    }
+    
+    if (key == 'a') {
+        draw_alpha = !draw_alpha;
     }
     
     if (key == '0') {

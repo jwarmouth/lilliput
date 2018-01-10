@@ -47,13 +47,13 @@ public:
     
     ofTexture colorTex0, depthTex0, irTex0;
     ofShader depthShader, irShader, alphaShader, shaderBlurX, shaderBlurY;
-    ofFbo frameFbo, depthFbo, irFbo, fboBlurOnePass, fboBlurTwoPass, guiFbo;
+    ofFbo frameFbo, depthFbo, irFbo, saveFbo, fboBlurOnePass, fboBlurTwoPass, guiFbo;
     
     bool process_occlusion, calibrate;
     bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray, draw_contours;
     
     //  Width & Height of Video
-    int w, h, depthH, depthW, saveW, saveH;
+    int w, h, depthH, depthW, frameW, frameH, saveW, saveH;
     float screenRotation;
     
     // vec4 depthDraw;

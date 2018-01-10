@@ -14,7 +14,7 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     // Application Settings
-    ofSetFrameRate(60);
+    ofSetFrameRate(30);
 //    ofEnableAlphaBlending();
 //    ofEnableSmoothing();
 //    ofSetVerticalSync(true);
@@ -34,8 +34,10 @@ void ofApp::setup(){
     h = 1080;
     depthW = 1500;
     depthH = 1080;
-    saveW = 1024; //128; //256 / 512 / 1024;
-    saveH = 848; //106; //212 / 424 / 848;
+    frameW = 1024; //128; //256 / 512 / 1024;
+    frameH = 848; //106; //212 / 424 / 848;
+    saveW = 192;
+    saveH = 159;
     offset = 240;
     // depthDraw = vec4 (offset, 0, depthW, depthH);
     
@@ -60,10 +62,11 @@ void ofApp::setup(){
 //    draw_gray = true;
     
     // Allocate FBOs
-    fboBlurOnePass.allocate(saveW, saveH, GL_RGBA);
-    fboBlurTwoPass.allocate(saveW, saveH, GL_RGBA);
-    frameFbo.allocate(saveW, saveH, GL_RGBA);
-    depthFbo.allocate(saveW, saveH, GL_RGBA);
+    fboBlurOnePass.allocate(frameW, frameH, GL_RGBA);
+    fboBlurTwoPass.allocate(frameW, frameH, GL_RGBA);
+    frameFbo.allocate(frameW, frameH, GL_RGBA);
+    depthFbo.allocate(frameW, frameH, GL_RGBA);
+    saveFbo.allocate(saveW, saveH, GL_RGBA);
     irFbo.allocate(w, h, GL_RGB);
     guiFbo.allocate(h, 160, GL_RGBA);
     
@@ -237,8 +240,8 @@ void ofApp::drawGui(){
     //            ofDrawBitmapStringHighlight(ofToString(i), i, h - 20);
     //        }
     
-    ofColor highlight(255,0,0);
-    ofColor normal (200,200,200);
+    ofColor highlight(255, 0, 0);
+    ofColor normal (0, 0, 0);
     
     
     // Begin GUI Fbo
@@ -247,7 +250,7 @@ void ofApp::drawGui(){
     
     // Draw background rectangle
     ofSetColor(100,100,100,128);
-    ofDrawRectangle(0, 0, h, 160);
+    ofDrawRectangle(0, 0, h, 80);
     
     // Draw Frame Rate
     ofSetColor(highlight);
@@ -264,59 +267,39 @@ void ofApp::drawGui(){
         ofDrawBitmapString(ofToString(frameCount), 50, 50);
     }
     
-
-    
     // Draw Key Controls
     ofSetColor(draw_ir ? highlight : normal);
-    ofDrawBitmapString("I: Draw IR", 100, 80);
+    ofDrawBitmapString("I: Draw IR", 200, 20);
     
     ofSetColor(draw_gray ? highlight : normal);
-    ofDrawBitmapString("G: Draw Gray", 300, 80);
+    ofDrawBitmapString("G: Draw Gray", 400, 20);
     
     ofSetColor(draw_depth ? highlight : normal);
-    ofDrawBitmapString("D: Draw Depth", 500, 80);
+    ofDrawBitmapString("D: Draw Depth", 600, 20);
     
     ofSetColor(draw_blur ? highlight : normal);
-    ofDrawBitmapString("B: Draw Blur", 700, 80);
+    ofDrawBitmapString("B: Draw Blur", 800, 20);
     
     ofSetColor(calibrate ? highlight : normal);
-    ofDrawBitmapString("X: Calibrate", 100, 120);
+    ofDrawBitmapString("X: Calibrate", 200, 40);
     
     ofSetColor(draw_contours ? highlight : normal);
-    ofDrawBitmapString("C: Draw Contours", 300, 120);
+    ofDrawBitmapString("C: Draw Contours", 400, 40);
     
     ofSetColor(draw_registered ? highlight : normal);
-    ofDrawBitmapString("R: Draw Registered", 500, 120);
+    ofDrawBitmapString("R: Draw Registered", 600, 40);
     
     ofSetColor(process_occlusion ? highlight : normal);
-    ofDrawBitmapString("O: Process Occlusion", 700, 120);
-
-//    
-//    if (key == '0') {
-//        gnomes[0].reset();
-//    }
-//    
-//    if (key == '1') {
-//        gnomes[1].reset();
-//    }
-//    
-//    if (key == '2') {
-//        gnomes[2].reset();
-//    }
-//    
-//    if (key == '3') {
-//        gnomes[3].reset();
-//    }
-//    
-//    if (key == '4') {
-//        gnomes[4].reset();
-//    }
+    ofDrawBitmapString("O: Process Occlusion", 800, 40);
     
+    ofSetColor (normal);
+    ofDrawBitmapString("Gnomes:", 200, 60);
     
-    // Draw Report to screen
-    //
-    //        ofDrawBitmapString( ("Frame Rate: " + ofToString(ofGetFrameRate())) , 10, 20);
-    //        ofPopMatrix();
+    // Draw Gnomes controls
+    for (int i=0; i<numGnomes; i++) {
+        ofSetColor(gnomes[i].activeGnome ? highlight : normal);
+        ofDrawBitmapString(ofToString(i), 280 + i * 20, 60);
+    }
     
     guiFbo.end();
     
@@ -440,15 +423,15 @@ void ofApp::makeNewDirectory(){
 void ofApp::blurDepth(){
     
     
-    fboBlurOnePass.allocate(saveW, saveH);
-    fboBlurTwoPass.allocate(saveW, saveH);
+    fboBlurOnePass.allocate(frameW, frameH);
+    fboBlurTwoPass.allocate(frameW, frameH);
     
     // Draw Depth texture into a Frame Buffer Object
     depthFbo.begin();
     ofClear(0, 0, 0, 0);
     depthShader.begin();
     ofSetColor(ofColor::white);
-    depthTex0.draw(0, 0, saveW, saveH);
+    depthTex0.draw(0, 0, frameW, frameH);
     //    fboBlurTwoPass.draw(0, 0, saveW, saveH);   // draw blurred version instead
     depthShader.end();
     depthFbo.end();
@@ -459,7 +442,7 @@ void ofApp::blurDepth(){
     ofClear(0, 0, 0, 0);
     shaderBlurX.begin();
     shaderBlurX.setUniform1f("blurAmnt", 1.0);
-    depthFbo .draw(0, 0, saveW, saveH);
+    depthFbo.draw(0, 0, frameW, frameH);
     shaderBlurX.end();
     fboBlurOnePass.end();
     
@@ -469,7 +452,7 @@ void ofApp::blurDepth(){
     ofClear(0, 0, 0, 0);
     shaderBlurY.begin();
     shaderBlurY.setUniform1f("blurAmnt", 1.0);
-    fboBlurOnePass.draw(0, 0, saveW, saveH);
+    fboBlurOnePass.draw(0, 0, frameW, frameH);
     shaderBlurY.end();
     fboBlurTwoPass.end();
 }
@@ -498,14 +481,20 @@ void ofApp::saveFrame(){
     alphaShader.begin();    // pass depth fbo to the alpha shader
     //    alphaShader.setUniformTexture("maskTex", depthFbo.getTexture(), 1 );
     alphaShader.setUniformTexture("maskTex", fboBlurTwoPass.getTexture(), 1 );
-    gr.getRegisteredTexture(process_occlusion).draw(0, 0, saveW, saveH);
+    gr.getRegisteredTexture(process_occlusion).draw(0, 0, frameW, frameH);
     alphaShader.end();
     frameFbo.end();
+    
+    saveFbo.begin();
+    ofClear(0,0,0,0);
+    frameFbo.draw(0,0, saveW, saveH);
+    saveFbo.end();
     
     
     // Prepare pixels object
     ofPixels pix; // allocate pix
-    frameFbo.readToPixels(pix);
+    //frameFbo.readToPixels(pix);
+    saveFbo.readToPixels(pix);
     threadRecorder.addFrame(pix, ofGetFrameRate()); 
     
     //  IT WORKS!!! Saves .png sequence with alpha channel

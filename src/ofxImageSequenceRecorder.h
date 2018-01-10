@@ -59,6 +59,7 @@ public:
     
     void setCounter(int count){
         counter = count;
+        frameRateTotal = 0;
     }
     
     void setNumberWidth(int nbwidth){
@@ -140,10 +141,7 @@ public:
             // Create fps.txt file
             ofFile file (gnomesDirectory + "/Gnomes/gnome_" + tempPath + "/fps.txt", ofFile::WriteOnly);
             file << frameRateAvg;
-            
-
         }
-        
     }
     
     

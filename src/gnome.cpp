@@ -84,6 +84,7 @@ void gnome::loadGnomeSequence() {
     string fpsString;
     file >> fpsString;
     float fps = ofToFloat(fpsString);
+    if (fps > 30) fps = 30;
     sequence.setFrameRate((int)fps); //set to ten frames per second for Muybridge's horse.
 }
 

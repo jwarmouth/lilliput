@@ -50,6 +50,7 @@ void ofApp::setup(){
     // Initialize Kinect
     kinect0.open(true, true, 0, 2);
     kinect0.start();
+    //kinect0.setEnableFlipBuffer(true);
     gr.setup(kinect0.getProtonect(), 2);
     
     // Intervals
@@ -65,6 +66,7 @@ void ofApp::setup(){
     humanDetected = false;
     process_occlusion = false;
     calibrate = true;
+    draw_gui = false;
 //    draw_gray = true;
     
     // Allocate FBOs
@@ -94,7 +96,7 @@ void ofApp::setup(){
     numGnomes = 5;
     for (int i=0; i<numGnomes; i++) {
         gnomes[i].setup(gnomesDirectory);
-        gnomes[i].startThread();
+        // gnomes[i].startThread();
         
         // If we use a vector we should use this code
 //        gnome tempGnome;
@@ -157,11 +159,11 @@ void ofApp::update(){
 
     // Update Gnomes
         // Loop through & Update Gnomes if active
-//        for (int i=0; i<numGnomes; i++) {
-//            if (gnomes[i].activeGnome) {
-//                gnomes[i].update();
-//            }
-//        }
+        for (int i=0; i<numGnomes; i++) {
+            if (gnomes[i].activeGnome) {
+                gnomes[i].update();
+            }
+        }
         
     // Physics Calculations for Gnomes
         calculatePhysics();
@@ -244,7 +246,9 @@ void ofApp::draw(){
         }
         
     // Draw GUI
-        drawGui();
+        if (draw_gui) {
+            drawGui();
+        }
     }
     
 }
@@ -590,6 +594,8 @@ void ofApp::calculatePhysics(){
     
     // Cheap gravity simulator
     ofPixels & pix = grayDiff.getPixels();
+    float speedH = 10.0;
+    float speedMin = 5.0;
     
     
     // LOOP THROUGH ALL GNOMES
@@ -597,19 +603,21 @@ void ofApp::calculatePhysics(){
         
         // If Gnome is active
         if (gnomes[i].activeGnome) {
-        
-            // Calculate dx
-            gnomes[i].dx += gravity/ofGetFrameRate();
-            if (gnomes[i].x + gnomes[i].dx > depthW + offset) {
-                gnomes[i].dx = depthW + offset - gnomes[i].x - 1;
-            }
             
             // Set checkX & checkY values
             int checkX = gnomes[i].x;
             int checkY = w * gnomes[i].y;
+        
+            // Calculate dx & dy
+            gnomes[i].dx += gravity/ofGetFrameRate();
+            gnomes[i].dy = 0;
+            if (checkX + gnomes[i].dx > depthW + offset) {
+                gnomes[i].dx = depthW + offset - checkX;
+            }
             
-            // PREDICT if Gnome will fall to a white pixel within dx
             
+            
+            // ELSE PREDICT if Gnome will fall to a white pixel within dx
             // loop through x values from current to dx
             if (gnomes[i].dx > 0) {
                 for (int j = 0; j < gnomes[i].dx; j++) {
@@ -637,12 +645,48 @@ void ofApp::calculatePhysics(){
                                 }
                             }
                         }
+                        break;
                     }
                 }
             }
-    
+            
             // Let gnome fall --> if dx is 0, then it won't go anywhere!
             gnomes[i].x += gnomes[i].dx;
+            
+            
+            // IF Gnome is on the ground, move toward the closest side
+            if (checkX >= depthW + offset) {
+                float dyTemp = (gnomes[i].y - depthH/2) * speedH / depthH;
+                dyTemp += 5 * ofSign(dyTemp);
+                gnomes[i].dy = dyTemp;
+            }
+            
+            
+            // IF Gnome is too close to other Gnomes, move away
+            for (int j=0; j<numGnomes; j++) {
+                if (gnomes[i].x == gnomes[j].x && gnomes[i].y == gnomes[j].y) {
+                    break;
+                }
+                if (abs(gnomes[i].x - gnomes[j].x) < gnomes[i].w && abs(gnomes[i].y - gnomes[j].y) < gnomes[i].h/2) {
+                    // i.e. They are too close
+                    gnomes[i].dy += ofSign(gnomes[i].y - gnomes[j].y);
+                }
+            }
+            
+            // IF Gnome is on a slope, move sideways toward floor
+            
+            
+            // Let gnome move horizontally
+            gnomes[i].y += gnomes[i].dy;
+            
+            // IF Gnome is out of bounds, deactivate
+            if (gnomes[i].y - gnomes[i].w / 2 > depthH || gnomes[i].y + gnomes[i].w < 0) {
+                gnomes[i].activeGnome = false;
+            }
+            
+            
+    
+
         }
     }
     
@@ -705,6 +749,9 @@ void ofApp::calculateAlpha(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+    
+    //cout<<"KeyPressed: "<<key;
+    
     if (key == ' ') {
         humanDetected = true;
     }
@@ -744,6 +791,14 @@ void ofApp::keyPressed(int key){
         draw_alpha = !draw_alpha;
     }
     
+    if (key == 'h') {
+        draw_gui = !draw_gui;
+    }
+    
+//    if (key >= '0' && key < ofToChar(ofToString(numGnomes))) {
+//        gnomes[key - 48].reset();
+//    }
+    
     if (key == '0') {
         gnomes[0].reset();
     }
@@ -763,6 +818,26 @@ void ofApp::keyPressed(int key){
     if (key == '4') {
         gnomes[4].reset();
     }
+    
+//    if (key == '5') {
+//        gnomes[5].reset();
+//    }
+//    
+//    if (key == '6') {
+//        gnomes[6].reset();
+//    }
+//    
+//    if (key == '7') {
+//        gnomes[7].reset();
+//    }
+//    
+//    if (key == '8') {
+//        gnomes[8].reset();
+//    }
+//    
+//    if (key == '9') {
+//        gnomes[9].reset();
+//    }
     
 //    if (key == 'v') {
 //        draw_video = !draw_video;

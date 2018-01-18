@@ -36,8 +36,8 @@ void gnome::reset() {
 
 
 //--------------------------------------------------------------
-void gnome::threadedFunction() {
-    while(isThreadRunning()) {
+void gnome::update() {
+    //while(isThreadRunning()) {
         if (activeGnome) {
             counter = sequence.getCurrentFrame();
             if (counter > sequence.getCurrentFrame()) {
@@ -47,7 +47,7 @@ void gnome::threadedFunction() {
             //sequence.getTextureForTime(ofGetElapsedTimef()).draw(x-w, y-h/2*flip, w, h*flip);
             
         }
-    }
+    //}
 }
 
 

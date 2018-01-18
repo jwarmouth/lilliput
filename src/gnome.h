@@ -22,7 +22,7 @@
 #include "ofxImageSequence.h"
 #include <fstream>
 
-class gnome: public ofThread {
+class gnome {
 public:
     
     // Methods
@@ -36,7 +36,7 @@ public:
     void setRandomPosition();
 //    void calculateGravity();
     
-    void threadedFunction();
+    // void threadedFunction();
     
     // Properties
     float x, y, dx, dy, vidWidth, vidHeight, speed;

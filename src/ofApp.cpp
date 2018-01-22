@@ -67,6 +67,7 @@ void ofApp::setup(){
     process_occlusion = false;
     calibrate = true;
     draw_gui = false;
+    bgCheckTimer = ofGetElapsedTimef() + 10;
 //    draw_gray = true;
     
     // Allocate FBOs
@@ -384,6 +385,9 @@ void ofApp::detectHuman(){
         else if (recordingState == RECORDING) {
             waitToStopRecording();
         }
+        else {
+            backgroundCheck();
+        }
     }
 }
 
@@ -586,6 +590,24 @@ void ofApp::defineShaders(){
 void ofApp::calibrateBackground(){
     grayBg = grayImage;
     calibrate = false;
+}
+
+//--------------------------------------------------------------
+void ofApp::backgroundCheck(){
+    // if the timer expires, check the current grayImage against the background
+    // if they are exactly the same (grayDiff) then grayBg = grayBgOld;
+    if (ofGetElapsedTimef() > bgCheckTimer) {
+        grayBgOld.absDiff(grayImage);
+        cv::Mat diff_mat(grayBgOld.getCvImage());
+        cv::Scalar s1 = mean(diff_mat);
+        if (s1 == cv::Scalar(0,0,0)) {
+//            calibrateBackground();
+            grayBg = grayImage;
+            bgCheckTimer  = ofGetElapsedTimef() + 10; // Reset the timer to 10 seconds
+        }
+        grayBgOld = grayImage;    // Set grayBgOld to the current grayImage
+    }
+
 }
 
 

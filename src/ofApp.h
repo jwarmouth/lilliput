@@ -31,7 +31,7 @@ public:
     bool isRecording, humanDetected, isWaitingToRecord;
     string gnomesDirectory, currentPath, fileName;
     int frameCount, maxFramesPerGnome, minFramesPerGnome, threshold, offset;
-    float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer, gravity;
+    float recordingDelay, recordingTimer, gnomeInterval, gnomeTimer, gravity, bgCheckTimer;
     
     ofxImageSequenceRecorder threadRecorder;
     RecordingState recordingState;
@@ -41,7 +41,7 @@ public:
     
     // Background Learning for contours
     ofxCvColorImage	colorImg;
-    ofxCvGrayscaleImage grayImage, grayBg, grayDiff;
+    ofxCvGrayscaleImage grayImage, grayBg, grayDiff, grayBgOld;
     ofxCvContourFinder contourFinder;
     
     
@@ -91,6 +91,7 @@ public:
     void activateGnome();
     void calculatePhysics();
     void drawGui();
+    void backgroundCheck();
     
     
     // openFrameworks methods

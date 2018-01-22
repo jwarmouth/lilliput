@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "DF40779BF15B8520F63FDACA783098AAB0AD4C51",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "911F9D40E310FCB758EA5DDDC5C456407FB28AC8" : 9223372036854775807,
+    "DF40779BF15B8520F63FDACA783098AAB0AD4C51" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "480BC050-D406-4765-BD67-1F62AB11508E",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "911F9D40E310FCB758EA5DDDC5C456407FB28AC8" : "..\/..\/addons\/ofxImageSequence",
+    "DF40779BF15B8520F63FDACA783098AAB0AD4C51" : "Lilliput\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "Lilliput",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "Lilliput.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/Flightphase\/ofxImageSequence.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "911F9D40E310FCB758EA5DDDC5C456407FB28AC8"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/jeffutv\/lilliput.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "DF40779BF15B8520F63FDACA783098AAB0AD4C51"
+    }
+  ]
+}

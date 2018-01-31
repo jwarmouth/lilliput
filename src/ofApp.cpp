@@ -80,6 +80,8 @@ void ofApp::setup(){
     guiFbo.allocate(h, 160, GL_RGBA);
     grayFbo.allocate(w, h, GL_RGBA);
     fullFrameFbo.allocate(w, h, GL_RGBA);
+    depthFullFbo.allocate(w, h, GL_RGBA);
+    depthCropFbo.allocate(w, h, GL_RGBA);
     
     // Allocate CV Images
     colorImg.allocate(w, h);
@@ -92,6 +94,29 @@ void ofApp::setup(){
     threadRecorder.setPrefix("/gnome_");
     threadRecorder.setFormat("png");
     threadRecorder.setGnomesDirectory(gnomesDirectory);
+    
+    // Draw Depth Crop FBO
+    depthCropFbo.begin();
+    ofClear(0, 0, 0, 0);
+    ofSetColor(0, 0, 0, 255);
+    ofDrawRectangle(0, 0, 270, h); // top middle
+    ofDrawRectangle(0, 0, 300, 200); // top R
+    ofDrawRectangle(0, h - 200, 300, 200); // top L
+    
+    ofDrawRectangle(w - 335, 0, 335, h); // bottom
+    ofDrawRectangle(w - 450, 0, 450, 150); // bottom R hi-crop
+    ofDrawRectangle(w - 450, h - 150, 450, 150); // bottom L hi-crop
+    
+    ofSetColor(255, 255, 255, 255);
+//    ofDrawEllipse(w - 335, 400, 150, 100); // right foot
+//    ofDrawEllipse(w - 335, 600, 150, 100); // left foot
+    
+//    ofDrawRectangle(w - 335, 0, 350, 330); // bottom R
+//    ofDrawRectangle(w - 335, h - 400, 335, 400); // bottom L
+//    
+//    ofDrawRectangle(w - 330, 450, 330, 100); // bottom middle (feet)
+    
+    depthCropFbo.end();
     
     // Loop through and initialize Gnomes
     numGnomes = 5;
@@ -121,6 +146,22 @@ void ofApp::update(){
     // Set Depth Texture
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // GL_NEAREST or GL_LINEAR
         gr.update(depthTex0, colorTex0, process_occlusion);
+        
+        // Draw Depth texture into a Frame Buffer Object
+        depthFullFbo.begin();
+        ofClear(0, 0, 0, 255);
+        depthShader.begin();
+        ofSetColor(ofColor::white);
+        depthTex0.draw(offset,-75, depthW, depthH+150);
+        //    fboBlurTwoPass.draw(0, 0, saveW, saveH);   // draw blurred version instead
+        depthShader.end();
+        depthCropFbo.draw(0, 0, w, h);
+        if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
+            ofDrawEllipse(w - 335, 400, 170, 80); // right foot
+            ofDrawEllipse(w - 335, 600, 170, 80); // left foot
+        }
+        depthFullFbo.end();
+        
         // any chance we can feather the edge and get rid of single outlier pixels?
         blurDepth();
         
@@ -186,26 +227,27 @@ void ofApp::draw(){
             colorTex0.draw(0, 0, w, h);
         }
         
-    // Draw IR
+    // I: Draw IR
         if (draw_ir) {
             irFbo.draw(0, 0, w, h);
             // irFbo.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
         }
         
-    // Draw Gray CV Image
+    // G: Draw Gray CV Image
         if (draw_gray) {
             grayDiff.draw(0, 0, w, h);
         }
         
-    // Draw Depth
+    // D: Draw Depth
         if (draw_depth) {
-            depthShader.begin();
-            depthTex0.draw(offset, 0, depthW, depthH);
-            // depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
-            depthShader.end();
+//            depthShader.begin();
+//            depthTex0.draw(offset, 0, depthW, depthH);
+//            // depthTex0.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
+//            depthShader.end();
+            depthFullFbo.draw(0, 0, w, h);
         }
         
-    // Draw Blurred Depth
+    // B: Draw Blurred Depth
         if (draw_blur) {
             fboBlurTwoPass.draw(offset, 0, depthW, depthH);
             //fboBlurTwoPass.draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
@@ -214,7 +256,7 @@ void ofApp::draw(){
     // Draw Video w/Alpha
         
         
-    // Draw Contours
+    // C: Draw Contours
         if (draw_contours) {
             ofSetHexColor(0xffffff);
             contourFinder.draw(0, 0, w, h); // Draw the whole contour finder
@@ -233,7 +275,7 @@ void ofApp::draw(){
 //        }
         }
         
-    // Draw Registered
+    // R: Draw Registered
         if (draw_registered) {
             gr.getRegisteredTexture(process_occlusion).draw(offset, 0, depthW, depthH);
             //gr.getRegisteredTexture(process_occlusion).draw((w-depthW+50)/2, -50, depthW+10, depthH+100);
@@ -246,7 +288,7 @@ void ofApp::draw(){
             }
         }
         
-    // Draw GUI
+    // H: Draw GUI
         if (draw_gui) {
             drawGui();
         }
@@ -450,8 +492,6 @@ void ofApp::makeNewDirectory(){
 
 //--------------------------------------------------------------
 void ofApp::blurDepth(){
-    
-    
     fboBlurOnePass.allocate(frameW, frameH);
     fboBlurTwoPass.allocate(frameW, frameH);
     
@@ -485,8 +525,6 @@ void ofApp::blurDepth(){
     shaderBlurY.end();
     fboBlurTwoPass.end();
 }
-
-
 
 
 //--------------------------------------------------------------
@@ -592,22 +630,32 @@ void ofApp::calibrateBackground(){
     calibrate = false;
 }
 
+
 //--------------------------------------------------------------
 void ofApp::backgroundCheck(){
     // if the timer expires, check the current grayImage against the background
     // if they are exactly the same (grayDiff) then grayBg = grayBgOld;
     if (ofGetElapsedTimef() > bgCheckTimer) {
-        grayBgOld.absDiff(grayImage);
-        cv::Mat diff_mat(grayBgOld.getCvImage());
-        cv::Scalar s1 = mean(diff_mat);
-        if (s1 == cv::Scalar(0,0,0)) {
+        ofxCvGrayscaleImage grayCompare;
+        grayCompare.absDiff(grayBg, grayBgOld);
+//        grayBgOld.absDiff(grayImage);
+//        cv::Mat diff_mat(grayBgOld.getCvImage());
+//        cv::Scalar s1 = mean(diff_mat);
+//        if (s1 == cv::Scalar(0,0,0)) {
+        int bgCompare = 0;
+        ofPixels pxCompare = grayCompare.getPixels();
+        for (int i = 0; i < pxCompare.getWidth() * pxCompare.getHeight(); i++) {
+            if (pxCompare[i] > 128) {
+                bgCompare ++;
+            }
+        }
+        if (bgCompare < 20) {
 //            calibrateBackground();
             grayBg = grayImage;
             bgCheckTimer  = ofGetElapsedTimef() + 10; // Reset the timer to 10 seconds
         }
-        grayBgOld = grayImage;    // Set grayBgOld to the current grayImage
+        grayBgOld = grayBg;    // Set grayBgOld to the current grayImage
     }
-
 }
 
 
@@ -615,7 +663,16 @@ void ofApp::backgroundCheck(){
 void ofApp::calculatePhysics(){
     
     // Cheap gravity simulator
-    ofPixels & pix = grayDiff.getPixels();
+//    ofPixels & pix = grayDiff.getPixels();    // use grayDiff (IR) as physics platform
+    ofPixels pix1; // allocate pix
+    pix1.allocate(w, w, GL_RGB);
+    depthFullFbo.readToPixels(pix1); // use cropped depth as physics calculator
+    ofxCvColorImage colorTemp;
+    colorTemp = pix1;
+    ofxCvGrayscaleImage gray;
+    gray = colorTemp;
+    ofPixels & pix = gray.getPixels();
+
     float speedH = 10.0;
     float speedMin = 5.0;
     
@@ -636,7 +693,6 @@ void ofApp::calculatePhysics(){
             if (checkX + gnomes[i].dx > depthW + offset) {
                 gnomes[i].dx = depthW + offset - checkX;
             }
-            
             
             
             // ELSE PREDICT if Gnome will fall to a white pixel within dx
@@ -705,10 +761,6 @@ void ofApp::calculatePhysics(){
             if (gnomes[i].y - gnomes[i].w / 2 > depthH || gnomes[i].y + gnomes[i].w < 0) {
                 gnomes[i].activeGnome = false;
             }
-            
-            
-    
-
         }
     }
     
@@ -727,7 +779,8 @@ void ofApp::calculateAlpha(){
     // New grayFbo to hold Gray Diff info
     grayFbo.begin();
     ofClear(0, 0, 0, 0);
-    grayDiff.draw(0, 0, w, h);
+//    grayDiff.draw(0, 0, w, h);    // Use Gray Diff from IR as alpha
+    depthFullFbo.draw(0, 0, w, h);  // Use "Cropped" Depth as alpha
     grayFbo.end();
     
     fboBlurOnePass.allocate(w, h);
@@ -763,9 +816,6 @@ void ofApp::calculateAlpha(){
     
     alphaShader.end();
     fullFrameFbo.end();
-    
-
-    
 }
 
 

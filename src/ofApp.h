@@ -47,7 +47,7 @@ public:
     
     ofTexture colorTex0, depthTex0, irTex0;
     ofShader depthShader, irShader, alphaShader, shaderBlurX, shaderBlurY;
-    ofFbo frameFbo, depthFbo, irFbo, saveFbo, grayFbo, fullFrameFbo, fboBlurOnePass, fboBlurTwoPass, guiFbo;
+    ofFbo frameFbo, depthFbo, depthFullFbo, depthCropFbo, irFbo, saveFbo, grayFbo, fullFrameFbo, fboBlurOnePass, fboBlurTwoPass, guiFbo;
     
     bool process_occlusion, calibrate;
     bool draw_depth, draw_registered, draw_ir, draw_video, draw_blur, draw_gray, draw_contours, draw_alpha, draw_gui;
@@ -113,8 +113,8 @@ STRINGIFY(
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
               float value = col.r;
-              float low1 = 1000.0; // near distance in cm
-              float high1 = 3000.0; // far distance in cm
+              float low1 = 1500.0; // near distance in cm
+              float high1 = 2800.0; // far distance in cm
               float low2 = 1.0;
               float high2 = 0.0;
               float d = clamp(low2 + (value - low1) * (high2 - low2) / (high1 - low1), 0.0, 1.0);

@@ -71,16 +71,16 @@ void ofApp::setup(){
 //    draw_gray = true;
     
     // Allocate FBOs
-    fboBlurOnePass.allocate(frameW, frameH, GL_RGBA);
-    fboBlurTwoPass.allocate(frameW, frameH, GL_RGBA);
+//    fboBlurOnePass.allocate(frameW, frameH, GL_RGBA);
+//    fboBlurTwoPass.allocate(frameW, frameH, GL_RGBA);
     frameFbo.allocate(frameW, frameH, GL_RGBA);
-    depthFbo.allocate(frameW, frameH, GL_RGBA);
+    depthFbo.allocate(depthW, depthH, GL_RGBA);
     saveFbo.allocate(saveW, saveH, GL_RGBA);
-    irFbo.allocate(w, h, GL_RGB);
+//    irFbo.allocate(w, h, GL_RGB);
     guiFbo.allocate(h, 160, GL_RGBA);
     grayFbo.allocate(w, h, GL_RGBA);
     fullFrameFbo.allocate(w, h, GL_RGBA);
-    depthFullFbo.allocate(w, h, GL_RGBA);
+    depthFullFbo.allocate(w, h, GL_RGB);
     depthCropFbo.allocate(w, h, GL_RGBA);
     
     // Allocate CV Images
@@ -141,7 +141,7 @@ void ofApp::update(){
     // Get Kinect Frame Data
         colorTex0.loadData(kinect0.getColorPixelsRef());    // Get Kinect Color data
         depthTex0.loadData(kinect0.getDepthPixelsRef());    // Get Kinect Depth data
-        irTex0.loadData(kinect0.getIrPixelsRef());          // Get Kinect IR data if needed
+//        irTex0.loadData(kinect0.getIrPixelsRef());          // Get Kinect IR data if needed
 
     // Set Depth Texture
         depthTex0.setTextureMinMagFilter(GL_NEAREST, GL_NEAREST); // GL_NEAREST or GL_LINEAR
@@ -156,42 +156,72 @@ void ofApp::update(){
         //    fboBlurTwoPass.draw(0, 0, saveW, saveH);   // draw blurred version instead
         depthShader.end();
         depthCropFbo.draw(0, 0, w, h);
-        if (recordingState == RECORDING || recordingState == WAITING_TO_STOP) {
-            ofDrawEllipse(w - 335, 400, 170, 80); // right foot
-            ofDrawEllipse(w - 335, 600, 170, 80); // left foot
+//        if (humanDetected || recordingState == WAITING_TO_STOP) {
+//            ofDrawEllipse(w - 275, 400, 150, 80); // right foot
+//            ofDrawEllipse(w - 275, 600, 150, 80); // left foot
+//        }
+        depthFullFbo.end();
+        
+    // Open CV using Depth Image
+        ofPixels pix; // allocate pix
+        depthFullFbo.readToPixels(pix);
+        colorImg = pix;
+        grayImage = colorImg;
+        grayImage.threshold(threshold);
+        
+    // Find Ankle Contours (to add feet!)
+        grayImage.setROI(w-350, 0, 100, h);
+        contourFinder.findContours(grayImage, 100, (w*h)/3, 5, false, false);	// find holes
+        grayImage.setROI(0, 0, w, h);
+        
+        depthFullFbo.begin();
+        if (humanDetected || recordingState == WAITING_TO_STOP) {
+//            ofRotateZ(20);
+//            ofDrawEllipse(w-275, contourFinder.blobs[0].boundingRect.getCenter().y, 150, 80);
+//            ofRotateZ(-40);
+//            ofDrawEllipse(w-275, contourFinder.blobs[1].boundingRect.getCenter().y, 150, 80);
+            for (int i = 0; i < contourFinder.nBlobs; i++){
+                float blobY = contourFinder.blobs[i].boundingRect.getCenter().y;
+                ofDrawEllipse(w - 275, blobY, 150, 80); //  foot
+            }
         }
         depthFullFbo.end();
         
-        // any chance we can feather the edge and get rid of single outlier pixels?
-        blurDepth();
-        
-    // Draw IR to FBO
-        irFbo.begin();
-        ofClear(0, 0, 0, 0);
-        irShader.begin();
-        irTex0.draw(offset,-75, depthW, depthH+150);
-        irShader.end();
-        irFbo.end();
-    
-    // Calculate Open CV BG difference
-        ofPixels pix; // allocate pix
-        irFbo.readToPixels(pix);
+        depthFullFbo.readToPixels(pix);
         colorImg = pix;
         grayImage = colorImg;
-        // grayImage = kinect0.getDepthPixelsRef();
+        grayImage.threshold(threshold);
+        
+        // any chance we can feather the edge and get rid of single outlier pixels?
+        //blurDepth();
+        
+    // Draw IR to FBO
+//        irFbo.begin();
+//        ofClear(0, 0, 0, 0);
+//        irShader.begin();
+//        irTex0.draw(offset,-75, depthW, depthH+150);
+//        irShader.end();
+//        irFbo.end();
+    
+    // Calculate Open CV BG difference
+//        ofPixels pix; // allocate pix
+//        irFbo.readToPixels(pix);
+//        colorImg = pix;
+//        grayImage = colorImg;
+//        // grayImage = kinect0.getDepthPixelsRef();
         
     // Calibrate Background
-        if (calibrate) {
-            calibrateBackground();
-        }
+//        if (calibrate) {
+//            calibrateBackground();
+//        }
         
         // take the abs value of the difference between background and incoming and then threshold:
-        grayDiff.absDiff(grayBg, grayImage);
-        grayDiff.threshold(threshold);
+//        grayDiff.absDiff(grayBg, grayImage);
+//        grayDiff.threshold(threshold);
         
         // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
         // also, find holes is set to true so we will get interior contours as well....
-        contourFinder.findContours(grayDiff, 100, (w*h)/3, 5, false, true);	// find holes
+//        contourFinder.findContours(grayDiff, 100, (w*h)/3, 5, false, true);	// find holes
         
     // Calculate Alpha
         calculateAlpha();
@@ -208,7 +238,15 @@ void ofApp::update(){
         }
         
     // Physics Calculations for Gnomes
-        calculatePhysics();
+        bool isPhysicsNeeded = false;
+        for (int i = 0; i < numGnomes; i++) {
+            if (gnomes[i].activeGnome) {
+                isPhysicsNeeded = true;
+            }
+        }
+        if (isPhysicsNeeded) {
+            calculatePhysics();
+        }
     }
 }
 
@@ -235,7 +273,8 @@ void ofApp::draw(){
         
     // G: Draw Gray CV Image
         if (draw_gray) {
-            grayDiff.draw(0, 0, w, h);
+//            grayDiff.draw(0, 0, w, h);
+            grayImage.draw(0, 0, w, h);
         }
         
     // D: Draw Depth
@@ -664,14 +703,19 @@ void ofApp::calculatePhysics(){
     
     // Cheap gravity simulator
 //    ofPixels & pix = grayDiff.getPixels();    // use grayDiff (IR) as physics platform
-    ofPixels pix1; // allocate pix
-    pix1.allocate(w, w, GL_RGB);
-    depthFullFbo.readToPixels(pix1); // use cropped depth as physics calculator
-    ofxCvColorImage colorTemp;
-    colorTemp = pix1;
-    ofxCvGrayscaleImage gray;
-    gray = colorTemp;
-    ofPixels & pix = gray.getPixels();
+    
+    // 2nd attempt
+//    ofPixels pix1; // allocate pix
+//    pix1.allocate(w, w, GL_LUMINANCE);
+//    depthFullFbo.readToPixels(pix1); // use cropped depth as physics calculator
+//    ofxCvColorImage colorTemp;
+//    colorTemp = pix1;
+//    ofxCvGrayscaleImage gray;
+//    gray = colorTemp;
+//    ofPixels & pix = gray.getPixels();
+    
+    // 3rd attempt
+    ofPixels & pix = grayImage.getPixels();
 
     float speedH = 10.0;
     float speedMin = 5.0;

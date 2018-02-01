@@ -113,7 +113,7 @@ STRINGIFY(
           {
               vec4 col = texture2DRect(tex, gl_TexCoord[0].xy);
               float value = col.r;
-              float low1 = 1500.0; // near distance in cm
+              float low1 = 1200.0; // near distance in cm
               float high1 = 2800.0; // far distance in cm
               float low2 = 1.0;
               float high2 = 0.0;
